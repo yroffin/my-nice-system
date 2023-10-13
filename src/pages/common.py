@@ -41,7 +41,6 @@ class StandardPage():
         session_roles = []
         with ui.header(elevated=True).style('background-color: #c3e3bf').classes('items-center justify-between'):
 
-            session_token_auth2 = config['security']['auth2_token_name']
             logging.debug('Read from session {}'.format(app.storage.user))
     
             if 'identity' in app.storage.user and app.storage.user['identity']:
