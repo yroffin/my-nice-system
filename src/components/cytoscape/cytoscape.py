@@ -5,12 +5,15 @@ from nicegui import ui,app
 
 import logging
 
-class Counter(Element, component='sample.js', exposed_libraries=['sampleMylib.js']):
+class Cytoscape(Element, component='cytoscape.js'):
 
-    def __init__(self, title: str, *, on_change: Optional[Callable] = None) -> None:
+    def __init__(self, title: str, model = None) -> None:
         super().__init__()
         self._props['title'] = title
-        self.on('change', on_change)
+        self._props['model'] = model
+        self._props['nodes'] = model['nodes']
+        self._props['edges'] = model['edges']
+        ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>')
         ui.add_head_html('<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>')
         ui.add_head_html(
             '''
@@ -37,5 +40,3 @@ class Counter(Element, component='sample.js', exposed_libraries=['sampleMylib.js
 </style>
             ''')
 
-    def reset(self, value) -> None:
-        self.run_method('reset', value)

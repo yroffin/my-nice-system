@@ -1,5 +1,5 @@
 
-//import { toto } from "mylib"
+import { toto } from "sampleMylib"
 
 export default {
   mounted: function () {
@@ -28,17 +28,22 @@ export default {
       this.container.layout({
         name: 'circle'
       }).run();
+
+      this.value = 1
     }
 
   },
   template: `
   <div>
+  <p>{{value}}</p>
   <div id="container" class="cy">
   </div>
   </div>
   `,
   data() {
-    return {}
+    return {
+      value: this.value
+    }
   },
   methods: {
     handle_click() {

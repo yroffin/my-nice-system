@@ -25,7 +25,6 @@ class MainPage(StandardPage):
                 ui.button('Reset', on_click=self.onClick).props('small outline')
 
     async def onClick(self):
-        print(self.counter)
         self.counter.reset(1)
 
 @ui.page('/')

@@ -33,7 +33,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         # identity session user object handle user identity
-        logging.info(app.storage.user.get('identity'))
         authenticated = app.storage.user.get('identity', None)
         if not authenticated:
             logging.info('User is not authenticated')
@@ -42,7 +41,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 app.storage.user['referrer_path'] = request.url.path  # remember where the user wanted to go
                 return RedirectResponse('/login')
         else:
-            logging.debug('User is authenticated')
+            if request.url.path in nicegui.globals.page_routes.values() and request.url.path not in unrestricted_page_routes:
+                logging.debug("[CONNECTED] Identity: {} => {}".format(app.storage.user.get('identity'), request.url))
         return await call_next(request)
 
 
@@ -72,8 +72,8 @@ class SecurityService(object):
         None
 
     def startup(self):
+        logging.info('Load middleware')
         app.add_middleware(AuthMiddleware)
-        #app.add_middleware(SessionMiddleware, secret_key = config['gui']['secret'])
         ui.run(title = 'Devops GUI', storage_secret=config['gui']['secret'])
 
     def initiateCodeFlow(self, request = None, scopes = None):
@@ -81,6 +81,3 @@ class SecurityService(object):
 
     def acquireToken(self, request: Request = None):
         None
-
-if __name__ in {"__main__", "__mp_main__"}:
-    SecurityService().startup()
