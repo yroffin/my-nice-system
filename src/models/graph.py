@@ -4,6 +4,7 @@ from peewee import *
 from utils.singleton import singleton
 import logging
 import time
+import json
 
 db = SqliteDatabase('.tmp/db.sqlite3')
 
@@ -34,6 +35,12 @@ class Edge(BaseModel):
     timestamp = DateTimeField(default=datetime.datetime.now)
     graph = ForeignKeyField(Graph, backref='graphs')
 
+class Style(BaseModel):
+    label = TextField(null=True)
+    selector = TextField(null=True)
+    style = TextField()
+    graph = ForeignKeyField(Graph, backref='graphs')
+
 from bs4 import BeautifulSoup
 
 @singleton
@@ -56,21 +63,70 @@ class GraphService(object):
                     "id": graph.id,
                     "name": graph.name,
                     "nodes": [],
-                    "edges": []
+                    "edges": [],
+                    "styles": []
                 }
             for node in Node.select().where(Node.graph.__eq__(id)):
                 result['nodes'].append({
-                    "id": node.id,
-                    "label": node.label
+                    "id": "n{}".format(node.id),
+                    "reference": node.reference,
+                    "label": node.label,
+                    "tag": node.tag,
+                    "x": node.x,
+                    "y": node.y
                 })
             for edge in Edge.select().where(Edge.graph.__eq__(id)):
                 result['edges'].append({
-                    "id": edge.id,
+                    "id": "e{}".format(edge.id),
+                    "reference": edge.reference,
                     "label": edge.label,
-                    "source": edge.source.id,
-                    "target": edge.target.id,
+                    "tag": edge.tag,
+                    "source": "n{}".format(edge.source.id),
+                    "target": "n{}".format(edge.target.id),
+                    "_source": edge.source.reference,
+                    "_target": edge.target.reference,
+                })
+            for style in Style.select().where(Style.graph.__eq__(id)):
+                result['styles'].append({
+                    "label": style.label,
+                    "selector": style.selector,
+                    "style": json.loads(style.style)['css']
                 })
         return result
+
+    def loadStyle(self, filename = None, name = None):
+        start = time.time()
+
+        # Reading the data inside the xml
+        # file to a variable under the name 
+        # data
+        with open(filename, 'r') as f:
+            data = f.read()
+        
+        if name:
+            mygraph = Graph.select().where(Graph.name.__eq__(name))
+            if len(mygraph) == 1:
+                # Passing the stored data inside
+                # the beautifulsoup parser, storing
+                # the returned object 
+                Json_data = json.loads(data)
+            
+                counter=0
+                # find all nodes
+                for style in Json_data:
+                    label = None
+                    if 'label' in style:
+                        label = style['label']
+
+                    # create a new node
+                    style = Style.create(label = label, selector = style['selector'], style = json.dumps(style['style']), graph = mygraph[0])
+                    counter += 1
+
+                logging.info('graph {} loaded in {} ms with {} style(s)'.format(mygraph[0].name, (time.time() - start) * 1000, counter))
+            else:
+                logging.warn('No graph with name {}'.format(name))
+        else:
+            logging.warn('Name is None')
 
     def loadGexf(self, filename = None):
         start = time.time()
@@ -128,6 +184,8 @@ class GraphService(object):
             tag = None
             if 'tag' in edge.attrs:
                 tag = edge.attrs['tag']
+                if len(tag) == 0:
+                    tag = None
             source = None
             if 'source' in edge.attrs:
                 source = edge.attrs['source']

@@ -2,7 +2,7 @@
 """Orm class.
 """
 
-from models.graph import GraphService, db, Graph, Node, Edge
+from models.graph import GraphService, Style, db, Graph, Node, Edge
 
 from nicegui import app
 
@@ -24,8 +24,9 @@ class OrmService(object):
     def startup(self):
         logging.info('Load ORM')
         db.connect()
-        db.drop_tables([Graph, Node, Edge])
-        db.create_tables([Graph, Node, Edge])
+        db.drop_tables([Graph, Node, Edge, Style])
+        db.create_tables([Graph, Node, Edge, Style])
         
-        GraphService().loadGexf('misc/sample.xml')
+        GraphService().loadGexf('misc/sample.gexf')
+        GraphService().loadStyle('misc/styles.json', name = 'default')
 

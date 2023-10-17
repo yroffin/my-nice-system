@@ -24,7 +24,7 @@ class Cytoscape(Element, component='cytoscape.js'):
       }
 
       .cy {
-        width: 500px;
+        width: 1024px;
         height: 500px;
         z-index: 999;
       }
@@ -39,4 +39,7 @@ class Cytoscape(Element, component='cytoscape.js'):
       }
 </style>
             ''')
-
+        self.on('event', self.handle_event)
+      
+    def handle_event(self, event):
+      print(event)
