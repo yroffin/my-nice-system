@@ -1,7 +1,6 @@
 function build(cy, mygraph) {
   // refresh render
   cy.startBatch()
-  //cy.boxSelectionEnabled(this.boxSelectionEnabled)
   cy.nodes().remove()
   cy.edges().remove()
 
@@ -170,9 +169,9 @@ export default {
     }
   },
   template: `
-  <div>
-  <div id="container" class="cy">
-  </div>
+  <div class="cy">
+    <div id="container" class="cy">
+    </div>
   </div>
   `,
   data() {

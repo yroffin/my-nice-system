@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from nicegui.element import Element
 from nicegui import ui,app
@@ -7,8 +7,18 @@ import logging
 
 class Cytoscape(Element, component='cytoscape.js'):
 
-    def __init__(self, title: str, model = None) -> None:
+    def __init__(self, title: str, model = None, 
+                 on_click_node: Optional[Callable[..., Any]] = None, 
+                 data_node = None,
+                 on_click_edge: Optional[Callable[..., Any]] = None,
+                 data_edge = None) -> None:
         super().__init__()
+
+        self.on_click_node = on_click_node
+        self.data_node = data_node
+        self.on_click_edge = on_click_edge
+        self.data_edge = data_edge
+
         self._props['title'] = title
         self._props['model'] = model
         self._props['nodes'] = model['nodes']
@@ -18,28 +28,22 @@ class Cytoscape(Element, component='cytoscape.js'):
         ui.add_head_html(
             '''
 <style>
-      body {
-        font-family: helvetica;
-        font-size: 14px;
-      }
-
       .cy {
-        width: 1024px;
+        width: 100%;
         height: 500px;
         z-index: 999;
-      }
-
-      h1 {
-        opacity: 0.5;
-        font-size: 1em;
-      }
-
-      button {
-        margin-right: 10px;
       }
 </style>
             ''')
         self.on('event', self.handle_event)
       
     def handle_event(self, event):
-      print(event)
+
+      if event.args['type'] == 'click' and event.args['target']['type'] == 'node':
+        if self.on_click_node:
+          self.data_node['label'] = event.args['target']['data']['label']
+          self.on_click_node()
+
+      if event.args['type'] == 'click' and event.args['target']['type'] == 'edge':
+        if self.on_click_edge:
+          self.on_click_edge()

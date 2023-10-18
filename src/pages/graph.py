@@ -62,7 +62,12 @@ class GraphPage(StandardPage):
     """
 
     def init(self):
-        None
+        self.data_node = {
+            "label": ""
+        }
+        self.data_edge = {
+            "label": ""
+        }
 
     @ui.refreshable
     def myJson(self) -> None:
@@ -76,9 +81,31 @@ class GraphPage(StandardPage):
             with self.body:
                 self.chat(message = "Graph", detail = "load graph {}".format(id))
 
+                # select dialog node
+                self.dialog_node = ui.dialog()
+                with self.dialog_node as dialog, ui.card():
+                    ui.label('Node')
+                    label = ui.input(label='Label', placeholder='start typing',
+                        validation={'Input too long': lambda value: len(value) < 255})
+                    label.bind_value(self.data_node, target_name = 'label')
+                    ui.button('Close', on_click=dialog.close)
+
+                # select dialog node
+                self.dialog_edge = ui.dialog()
+                with self.dialog_edge as dialog, ui.card():
+                    ui.label('Edge')
+                    label = ui.input(label='Label', placeholder='start typing',
+                        validation={'Input too long': lambda value: len(value) < 255})
+                    label.bind_value(self.data_edge, target_name = 'label')
+                    ui.button('Close', on_click=dialog.close)
+
                 self.myGraph = GraphService().graph(id = id)
-                self.cytoscape = Cytoscape('Graph', model = self.myGraph)
-                print(self.myGraph)
+                self.cytoscape = Cytoscape('Graph', 
+                                           model = self.myGraph, 
+                                           on_click_node=self.dialog_node.open, 
+                                           data_node = self.data_node,
+                                           on_click_edge=self.dialog_edge.open, 
+                                           data_edge = self.data_edge)
                 ui.separator()
                 self.myJson()
 

@@ -61,8 +61,6 @@ class StandardPage():
                 allRoleMatch = False
 
         with self.body:
-            ui.label("Role: {}".format(roles))
-            ui.separator()
             if not allRoleMatch:
                 ui.label('/!\ permission denied')
             else:
