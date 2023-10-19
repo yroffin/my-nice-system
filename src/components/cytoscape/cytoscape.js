@@ -41,9 +41,6 @@ function build(cy, mygraph) {
     cy.add(myedges)
   }
 
-  cy.endBatch()
-  cy.fit()
-
   const content = (element) => {
     let cdata = element.data().cdata ? '*' : ''
     let alias = element.data().alias ? '@' : ''
@@ -76,6 +73,8 @@ function build(cy, mygraph) {
   })
 
   cy.style(mystyle)
+  cy.endBatch()
+  cy.fit()
 }
 
 export default {
@@ -165,7 +164,9 @@ export default {
 
   },
   methods: {
-    handler() {
+    select(data) {
+      console.log(this.container.$(`#${data}`))
+      this.container.center(this.container.$(`#${data}`))
     }
   },
   template: `
@@ -177,8 +178,6 @@ export default {
   data() {
     return {
     }
-  },
-  methods: {
   },
   props: {
     title: String,

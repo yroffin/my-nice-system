@@ -62,6 +62,26 @@ class GraphPage(StandardPage):
     """
 
     def init(self):
+        try:
+            app.storage.user['graph_properties']
+        except:
+            app.storage.user['graph_properties'] = {
+                "width": 1024,
+                "height": 768
+            }
+        
+        self.data = app.storage.user['graph_properties']
+
+        self.nodeColumns = [
+            {'name': 'id', 'label': 'Id', 'field': 'id', 'sortable': True},
+            {'name': 'label', 'label': 'Label', 'field': 'label', 'sortable': True},
+        ]
+
+        self.edgeColumns = [
+            {'name': 'id', 'label': 'Id', 'field': 'id', 'sortable': True},
+            {'name': 'label', 'label': 'Label', 'field': 'label', 'sortable': True},
+        ]
+
         self.data_node = {
             "label": ""
         }
@@ -70,10 +90,32 @@ class GraphPage(StandardPage):
         }
 
     @ui.refreshable
-    def myJson(self) -> None:
-        ui.json_editor({'content': {'json': self.myGraph}},
-                on_select=lambda e: ui.notify(f'Select: {e}'),
-                on_change=lambda e: ui.notify(f'Change: {e}'))
+    def tableNode(self) -> None:
+        rows = []
+        for node in GraphService().nodes():
+            rows.append({
+                "id": "n{}".format(node['id']),
+                "label": node['label']
+                })
+
+        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single", on_select=lambda: self.select(table))
+        table.classes('w-full')
+
+    @ui.refreshable
+    def tableEdge(self) -> None:
+        rows = []
+        for edge in GraphService().edges():
+            rows.append({
+                "id": "e{}".format(edge['id']),
+                "label": edge['label']
+                })
+
+        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single", on_select=lambda: self.select(table))
+        table.classes('w-full')
+
+    async def select(self, table):
+        if len(table.selected) != 0:
+            self.cytoscape.select(table.selected[0]['id'])
 
     def build(self, request, id):
         # Call inheritance to check roles
@@ -82,13 +124,38 @@ class GraphPage(StandardPage):
                 self.chat(message = "Graph", detail = "load graph {}".format(id))
 
                 # select dialog node
+                self.dialog_search_node = ui.dialog()
+                with self.dialog_search_node, ui.card():
+                    ui.label('Search')
+                    self.tableNode()
+
+                # select dialog edge
+                self.dialog_search_edge = ui.dialog()
+                with self.dialog_search_edge, ui.card():
+                    ui.label('Search')
+                    self.tableEdge()
+
+                # select dialog parameters
+                self.dialog_parameters = ui.dialog()
+                with self.dialog_parameters, ui.card():
+                    width = ui.input(label='Width', placeholder='start typing')
+                    width.bind_value(self.data, target_name="width")
+                    height = ui.input(label='Height', placeholder='start typing')
+                    height.bind_value(self.data, target_name="height")
+                    ui.button('Store', on_click=lambda: self.onStore())
+
+                ui.button('Store', on_click=lambda: self.dialog_parameters.open())
+                ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
+                ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+
+                # select dialog node
                 self.dialog_node = ui.dialog()
-                with self.dialog_node as dialog, ui.card():
+                with self.dialog_node, ui.card():
                     ui.label('Node')
                     label = ui.input(label='Label', placeholder='start typing',
                         validation={'Input too long': lambda value: len(value) < 255})
                     label.bind_value(self.data_node, target_name = 'label')
-                    ui.button('Close', on_click=dialog.close)
+                    ui.button('Close', on_click=self.dialog_node.close)
 
                 # select dialog node
                 self.dialog_edge = ui.dialog()
@@ -100,14 +167,20 @@ class GraphPage(StandardPage):
                     ui.button('Close', on_click=dialog.close)
 
                 self.myGraph = GraphService().graph(id = id)
-                self.cytoscape = Cytoscape('Graph', 
-                                           model = self.myGraph, 
-                                           on_click_node=self.dialog_node.open, 
-                                           data_node = self.data_node,
-                                           on_click_edge=self.dialog_edge.open, 
-                                           data_edge = self.data_edge)
-                ui.separator()
-                self.myJson()
+
+                with ui.card():
+                    self.cytoscape = Cytoscape('Graph', 
+                        model = self.myGraph, 
+                        width = self.data['width'],
+                        height = self.data['height'],
+                        on_click_node=self.dialog_node.open, 
+                        data_node = self.data_node,
+                        on_click_edge=self.dialog_edge.open, 
+                        data_edge = self.data_edge)
+    
+    def onStore(self):
+        app.storage.user['graph_properties'] = self.data
+        self.dialog_parameters.close()
 
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):

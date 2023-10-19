@@ -57,6 +57,28 @@ class GraphService(object):
             )
         return result
 
+    def nodes(self):
+        result = []
+        for node in Node.select():
+            result.append(
+                {
+                    "id": node.id,
+                    "label": node.label
+                }
+            )
+        return result
+
+    def edges(self):
+        result = []
+        for edge in Edge.select():
+            result.append(
+                {
+                    "id": edge.id,
+                    "label": edge.label
+                }
+            )
+        return result
+
     def graph(self, id: str = None):
         for graph in Graph.select().where(Graph.id.__eq__(id)):
             result = {

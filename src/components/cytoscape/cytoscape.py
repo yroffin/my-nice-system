@@ -8,6 +8,8 @@ import logging
 class Cytoscape(Element, component='cytoscape.js'):
 
     def __init__(self, title: str, model = None, 
+                 width = None,
+                 height = None,
                  on_click_node: Optional[Callable[..., Any]] = None, 
                  data_node = None,
                  on_click_edge: Optional[Callable[..., Any]] = None,
@@ -26,13 +28,13 @@ class Cytoscape(Element, component='cytoscape.js'):
         ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>')
         ui.add_head_html('<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>')
         ui.add_head_html(
-            '''
+            f'''
 <style>
-      .cy {
-        width: 100%;
-        height: 500px;
+      .cy {{
+        width: {width}px;
+        height: {height}px;
         z-index: 999;
-      }
+      }}
 </style>
             ''')
         self.on('event', self.handle_event)
@@ -47,3 +49,6 @@ class Cytoscape(Element, component='cytoscape.js'):
       if event.args['type'] == 'click' and event.args['target']['type'] == 'edge':
         if self.on_click_edge:
           self.on_click_edge()
+
+    def select(self, data):
+       self.run_method('select', data)
