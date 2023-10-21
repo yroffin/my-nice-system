@@ -185,7 +185,7 @@ class GraphPage(StandardPage):
                 "label": node['label']
                 })
 
-        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single")
+        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'})
         table.classes('w-full')
 
         table.add_slot('body', r'''
@@ -216,7 +216,7 @@ class GraphPage(StandardPage):
                 "label": edge['label']
                 })
 
-        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single")
+        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'})
         table.classes('w-full')
 
         table.add_slot('body', r'''
