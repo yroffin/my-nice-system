@@ -169,13 +169,6 @@ class GraphPage(StandardPage):
             {'name': 'action', 'label': 'Select'}
         ]
 
-        self.data_node = {
-            "label": ""
-        }
-        self.data_edge = {
-            "label": ""
-        }
-
     @ui.refreshable
     def tableNode(self) -> None:
         rows = []
@@ -272,24 +265,6 @@ class GraphPage(StandardPage):
                 ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
                 ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
 
-                # select dialog node
-                self.dialog_node = ui.dialog()
-                with self.dialog_node, ui.card():
-                    ui.label('Node')
-                    label = ui.input(label='Label', placeholder='start typing',
-                        validation={'Input too long': lambda value: len(value) < 255})
-                    label.bind_value(self.data_node, target_name = 'label')
-                    ui.button('Close', on_click=self.dialog_node.close)
-
-                # select dialog node
-                self.dialog_edge = ui.dialog()
-                with self.dialog_edge as dialog, ui.card():
-                    ui.label('Edge')
-                    label = ui.input(label='Label', placeholder='start typing',
-                        validation={'Input too long': lambda value: len(value) < 255})
-                    label.bind_value(self.data_edge, target_name = 'label')
-                    ui.button('Close', on_click=dialog.close)
-
                 self.myGraph = GraphService().graph(id = id)
 
                 with ui.card():
@@ -297,14 +272,20 @@ class GraphPage(StandardPage):
                         model = self.myGraph, 
                         width = self.data['width'],
                         height = self.data['height'],
-                        on_click_node=self.dialog_node.open, 
-                        data_node = self.data_node,
-                        on_click_edge=self.dialog_edge.open, 
-                        data_edge = self.data_edge)
-    
+                        graph = self.graph,
+                        onDrop = self.onDrop,
+                        onClone = self.onClone)
+
     def onStore(self):
         app.storage.user['graph_properties'] = self.data
         self.dialog_parameters.close()
+
+    def onDrop(self, data = None):
+        GraphService().dropNode(data["id"])
+        return data
+
+    def onClone(self, data = None, graph = None):
+        return GraphService().cloneNode(clone = data, id = graph)
 
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):

@@ -8,19 +8,21 @@ import logging
 
 class Cytoscape(Element, component='cytoscape.js'):
 
-    def __init__(self, title: str, model = None, 
-                 width = None,
-                 height = None,
-                 on_click_node: Optional[Callable[..., Any]] = None, 
-                 data_node = None,
-                 on_click_edge: Optional[Callable[..., Any]] = None,
-                 data_edge = None) -> None:
+    def __init__(
+          self,
+          title: str,
+          model = None, 
+          width = None,
+          height = None,
+          graph = None,
+          onDrop: Optional[Callable[..., Any]] = None, 
+          onClone: Optional[Callable[..., Any]] = None, 
+        ):
         super().__init__()
 
-        self.on_click_node = on_click_node
-        self.data_node = data_node
-        self.on_click_edge = on_click_edge
-        self.data_edge = data_edge
+        self.onDrop = onDrop
+        self.onClone = onClone
+        self.graph = graph
 
         self._props['title'] = title
         self._props['model'] = model
@@ -39,18 +41,55 @@ class Cytoscape(Element, component='cytoscape.js'):
 </style>
             ''')
         self.on('event', self.handle_event)
-      
+
+        self.data_node = {
+            "label": ""
+        }
+
+        self.data_edge = {
+            "label": ""
+        }
+
+        # select dialog node
+        self.dialog_node = ui.dialog()
+        with self.dialog_node, ui.card():
+            ui.label('Node')
+            label = ui.input(label='Label', placeholder='start typing',
+                validation={'Input too long': lambda value: len(value) < 255})
+            label.bind_value(self.data_node, target_name = 'label')
+            ui.button('Drop', on_click=lambda: self.dropNode(self.data_node['selected']))
+            ui.button('Clone', on_click=lambda: self.cloneNode(self.data_node['selected'], self.graph))
+            ui.button('Close', on_click=self.dialog_node.close)
+
+        # select dialog node
+        self.dialog_edge = ui.dialog()
+        with self.dialog_edge, ui.card():
+            ui.label('Edge')
+            label = ui.input(label='Label', placeholder='start typing',
+                validation={'Input too long': lambda value: len(value) < 255})
+            label.bind_value(self.data_edge, target_name = 'label')
+            ui.button('Close', on_click=self.dialog_edge.close)
+
     def handle_event(self, event):
       print(json.dumps(event.args, indent = 2))
 
       if event.args['type'] == 'click' and event.args['target']['type'] == 'node':
-        if self.on_click_node:
-          self.data_node['label'] = event.args['target']['data']['label']
-          self.on_click_node()
+        self.data_node['label'] = event.args['target']['data']['label']
+        self.data_node['selected'] = event.args['target']
+        self.dialog_node.open()
 
       if event.args['type'] == 'click' and event.args['target']['type'] == 'edge':
-        if self.on_click_edge:
-          self.on_click_edge()
+        self.data_edge['label'] = event.args['target']['data']['label']
+        self.data_edge['selected'] = event.args['target']
+        self.dialog_edge.open()
 
     def select(self, data):
        self.run_method('select', data)
+
+    def dropNode(self, data):
+       dropped = self.onDrop(data)
+       self.run_method('dropNode', dropped)
+
+    def cloneNode(self, data, graph):
+       cloned = self.onClone(data, graph)
+       self.run_method('cloneNode', cloned)

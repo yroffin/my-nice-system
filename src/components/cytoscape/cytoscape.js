@@ -95,6 +95,10 @@ export default {
           target: {
             id: evt.target.id(),
             data: evt.target.data(),
+            position: {
+              x: evt.target.position().x,
+              y: evt.target.position().y
+            },
             type: 'node'
           }
         });
@@ -165,8 +169,30 @@ export default {
   },
   methods: {
     select(data) {
-      console.log(this.container.$(`#${data}`))
       this.container.center(this.container.$(`#${data}`))
+    },
+    dropNode(data) {
+      this.container.$(`#${data.id}`).remove()
+    },
+    cloneNode(data) {
+      console.log(data)
+
+      let cloned = {
+        data: {
+          id: data.id,
+          label: data.data?.label,
+          alias: data.data?.alias,
+          cdata: data.data?.cdata,
+          group: data.data?.group,
+          tag: data.data?.tag
+        },
+        position: {
+          x: data.position?.x,
+          y: data.position?.y
+        }
+      }
+      this.container.add(cloned)
+
     }
   },
   template: `
