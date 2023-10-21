@@ -3,7 +3,7 @@ from components.cytoscape.cytoscape import Cytoscape
 from models.graph import GraphService
 from pages.common import StandardPage
 
-from nicegui import app, ui
+from nicegui import app, events, ui
 from core.config import config
 import logging
 
@@ -13,45 +13,130 @@ class GraphsPage(StandardPage):
 
     def init(self):
         self.columns = [
-            {'action': '...', 'name': 'Name', 'label': 'Label', 'field': 'name'}
+            {'name': 'Name', 'label': 'Label', 'field': 'name'},
+            {'name': 'Nodes', 'label': 'Node(s)', 'field': 'nodes'},
+            {'name': 'Edges', 'label': 'Edge(s)', 'field': 'edges'},
+            {'name': 'Style', 'label': 'Style(s)', 'field': 'styles'},
+            {'label': 'Load graph'},
+            {'label': 'Load style'},
+            {'label': 'Select'},
+            {'label': 'Drop'}
         ]
 
         self.rows = []
 
     @ui.refreshable
-    def table(self) -> None:
+    def tableArea(self) -> None:
         self.rows = []
         for graph in GraphService().graphs():
             self.rows.append({
                 "id": graph['id'],
-                "name": graph['name']
+                "name": graph['name'],
+                "nodes": graph['nodes'],
+                "edges": graph['edges'],
+                "styles": graph['styles']
                 })
 
         logging.info(self.rows)
-        self.table = ui.table(columns=self.columns, rows=self.rows, row_key='name', pagination={'rowsPerPage': 4, 'sortBy': 'name'}, selection="single", on_select=lambda: self.alert())
+        self.table = ui.table(columns=self.columns, rows=self.rows, row_key='name', pagination={'rowsPerPage': 4, 'sortBy': 'name'})
         self.table.classes('w-full')
+
+        self.table.add_slot('body', r'''
+            <q-tr :props="props">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                    {{ col.value }}
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('uploadGraph', props.row)"
+                        :icon="'upload'" />
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('uploadStyle', props.row)"
+                        :icon="'upload'" />
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('select', props.row)"
+                        :icon="'lan'" />
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('drop', props.row)"
+                        :icon="'clear'" />
+                </q-td>
+            </q-tr>
+        ''')
+
+        self.table.on('uploadGraph', self.uploadGraph)
+        self.table.on('uploadStyle', self.uploadStyle)
+        self.table.on('select', self.select)
+        self.table.on('drop', self.drop)
+
+    def uploadGraph(self, e: events.GenericEventArguments) -> None:
+        self.dialog_upload_graph_args = e.args
+        self.dialog_upload_graph.open()
+
+    def uploadStyle(self, e: events.GenericEventArguments) -> None:
+        self.dialog_upload_style_args = e.args
+        self.dialog_upload_style.open()
+
+    def select(self, e: events.GenericEventArguments) -> None:
+        ui.open('/graph/{}'.format(e.args['id']))
+
+    async def drop(self, e: events.GenericEventArguments) -> None:
+        result = await self.dialog_confirm
+        if result:
+            GraphService().dropGraph(e.args['id'])
+            self.tableArea.refresh()
+    
+    def handle_upload_graph(self, e: events.UploadEventArguments):
+        text = e.content.read().decode('utf-8')
+        mygraph = GraphService().graphById(self.dialog_upload_graph_args['id'])
+        GraphService().loadGexfData(data = text, id=mygraph)
+        self.dialog_upload_graph.close()
+        self.tableArea.refresh()
+
+    def handle_upload_style(self, e: events.UploadEventArguments):
+        text = e.content.read().decode('utf-8')
+        mygraph = GraphService().graphById(self.dialog_upload_style_args['id'])
+        GraphService().loadStyleData(data = text, id=mygraph)
+        self.dialog_upload_style.close()
+        self.tableArea.refresh()
 
     def build(self, request):
         # Call inheritance to check roles
         if StandardPage.build(self, request = request, roles = ['ADMIN']):
             with self.body:
-
                 self.chat(message = "Graph", detail = "scan all existing graphs")
 
-                self.table()
+                ui.button('New Graph', on_click=lambda: self.newGraph())
+                self.tableArea()
 
-                # load button
-                self.button = ui.button('Load', on_click=lambda: self.onClick())
-                self.button.disable()
+                # upload graph dialog
+                self.dialog_upload_graph = ui.dialog()
+                with self.dialog_upload_graph, ui.card():
+                    ui.label('Upload graph')
+                    ui.upload(on_upload=self.handle_upload_graph, auto_upload=True).props('accept=.gexf').classes('max-w-full')
 
-    async def alert(self):
-        if len(self.table.selected) == 0:
-            self.button.disable()
-        else:
-            self.button.enable()
+                # upload style dialog
+                self.dialog_upload_style = ui.dialog()
+                with self.dialog_upload_style, ui.card():
+                    ui.label('Upload style')
+                    ui.upload(on_upload=self.handle_upload_style, auto_upload=True).props('accept=.json').classes('max-w-full')
 
-    async def onClick(self):
-        ui.open('/graph/{}'.format(self.table.selected[0]['id']))
+                # confirmation
+                self.dialog_confirm = ui.dialog()
+                with self.dialog_confirm, ui.card():
+                    ui.label('Are you sure?')
+                    with ui.row():
+                        ui.button('Yes', on_click=lambda: self.dialog_confirm.submit(True))
+                        ui.button('No', on_click=lambda: self.dialog_confirm.submit(False))
+
+    def newGraph(self) -> None:
+        GraphService().createGraph()
+        self.tableArea.refresh()
 
 @ui.page('/graphs')
 def graphsPage(request: Request = None):
@@ -92,7 +177,7 @@ class GraphPage(StandardPage):
     @ui.refreshable
     def tableNode(self) -> None:
         rows = []
-        for node in GraphService().nodes():
+        for node in GraphService().nodes(self.graph):
             rows.append({
                 "id": "n{}".format(node['id']),
                 "label": node['label']
@@ -104,7 +189,7 @@ class GraphPage(StandardPage):
     @ui.refreshable
     def tableEdge(self) -> None:
         rows = []
-        for edge in GraphService().edges():
+        for edge in GraphService().edges(self.graph):
             rows.append({
                 "id": "e{}".format(edge['id']),
                 "label": edge['label']
@@ -122,6 +207,9 @@ class GraphPage(StandardPage):
         if StandardPage.build(self, request = request, roles = ['ADMIN']):
             with self.body:
                 self.chat(message = "Graph", detail = "load graph {}".format(id))
+
+                # store id graph
+                self.graph = id
 
                 # select dialog node
                 self.dialog_search_node = ui.dialog()

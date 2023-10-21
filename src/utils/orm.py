@@ -24,9 +24,7 @@ class OrmService(object):
     def startup(self):
         logging.info('Load ORM')
         db.connect()
-        db.drop_tables([Graph, Node, Edge, Style])
-        db.create_tables([Graph, Node, Edge, Style])
-        
-        GraphService().loadGexf('misc/sample.gexf')
-        GraphService().loadStyle('misc/styles.json', name = 'default')
+        if False:
+            db.drop_tables([Graph, Node, Edge, Style])
+            db.create_tables([Graph, Node, Edge, Style])
 

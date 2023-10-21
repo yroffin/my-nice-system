@@ -17,7 +17,7 @@ class Graph(BaseModel):
 
 class Node(BaseModel):
     label = TextField()
-    reference = TextField(unique=True)
+    reference = TextField()
     alias = TextField(null=True)
     group = TextField(null=True)
     x = IntegerField(null=True)
@@ -28,7 +28,7 @@ class Node(BaseModel):
 
 class Edge(BaseModel):
     label = TextField()
-    reference = TextField(unique=True)
+    reference = TextField()
     source = ForeignKeyField(Node, backref='node')
     target = ForeignKeyField(Node, backref='node')
     tag = TextField(null=True)
@@ -45,21 +45,39 @@ from bs4 import BeautifulSoup
 
 @singleton
 class GraphService(object): 
-    
+
+    def graphById(self, id = None):
+        return Graph.get(Graph.id == id)
+
     def graphs(self):
         result = []
         for graph in Graph.select():
-            result.append(
-                {
+            mygraph = {
                     "id": graph.id,
-                    "name": graph.name
-                }
-            )
+                    "name": graph.name,
+                    "nodes": Node.select().where(Node.graph.__eq__(graph.id)).count(),
+                    "edges": Edge.select().where(Edge.graph.__eq__(graph.id)).count(),
+                    "styles": Style.select().where(Style.graph.__eq__(graph.id)).count()
+            }
+            result.append(mygraph)
         return result
 
-    def nodes(self):
+    def dropGraph(self, id):
+        # Delete all nodes for this graph
+        Node.delete().where(Node.graph.__eq__(id)).execute()
+        # Delete all edges for this graph
+        Edge.delete().where(Edge.graph.__eq__(id)).execute()
+        # Delete style for this graph
+        Style.delete().where(Style.graph.__eq__(id)).execute()
+        # Delete this graph
+        Graph.delete().where(Graph.id.__eq__(id)).execute()
+
+    def createGraph(self, name = 'default'):
+        Graph.create(name = name)
+
+    def nodes(self, graph = None):
         result = []
-        for node in Node.select():
+        for node in Node.select().where(Node.graph == graph):
             result.append(
                 {
                     "id": node.id,
@@ -68,9 +86,9 @@ class GraphService(object):
             )
         return result
 
-    def edges(self):
+    def edges(self, graph = None):
         result = []
-        for edge in Edge.select():
+        for edge in Edge.select().where(Edge.graph == graph):
             result.append(
                 {
                     "id": edge.id,
@@ -80,7 +98,7 @@ class GraphService(object):
         return result
 
     def graph(self, id: str = None):
-        for graph in Graph.select().where(Graph.id.__eq__(id)):
+        for graph in Graph.select().where(Graph.id == id):
             result = {
                     "id": graph.id,
                     "name": graph.name,
@@ -88,7 +106,7 @@ class GraphService(object):
                     "edges": [],
                     "styles": []
                 }
-            for node in Node.select().where(Node.graph.__eq__(id)):
+            for node in Node.select().where(Node.graph == id):
                 result['nodes'].append({
                     "id": "n{}".format(node.id),
                     "reference": node.reference,
@@ -97,7 +115,7 @@ class GraphService(object):
                     "x": node.x,
                     "y": node.y
                 })
-            for edge in Edge.select().where(Edge.graph.__eq__(id)):
+            for edge in Edge.select().where(Edge.graph == id):
                 result['edges'].append({
                     "id": "e{}".format(edge.id),
                     "reference": edge.reference,
@@ -108,7 +126,7 @@ class GraphService(object):
                     "_source": edge.source.reference,
                     "_target": edge.target.reference,
                 })
-            for style in Style.select().where(Style.graph.__eq__(id)):
+            for style in Style.select().where(Style.graph == id):
                 result['styles'].append({
                     "label": style.label,
                     "selector": style.selector,
@@ -117,17 +135,24 @@ class GraphService(object):
         return result
 
     def loadStyle(self, filename = None, name = None):
-        start = time.time()
-
         # Reading the data inside the xml
         # file to a variable under the name 
         # data
         with open(filename, 'r') as f:
             data = f.read()
         
-        if name:
-            mygraph = Graph.select().where(Graph.name.__eq__(name))
+        mygraph = Graph.get(Graph.name == name)
+        self.loadStyleData(data = data, id = mygraph.id)
+
+    def loadStyleData(self, data = None, id = None):
+        start = time.time()
+        
+        if id:
+            mygraph = Graph.select().where(Graph.id == id)
             if len(mygraph) == 1:
+                # Delete style for this graph
+                Style.delete().where(Style.graph.__eq__(id)).execute()
+
                 # Passing the stored data inside
                 # the beautifulsoup parser, storing
                 # the returned object 
@@ -151,27 +176,38 @@ class GraphService(object):
             logging.warn('Name is None')
 
     def loadGexf(self, filename = None):
-        start = time.time()
-
         # Reading the data inside the xml
         # file to a variable under the name 
         # data
         with open(filename, 'r') as f:
             data = f.read()
+            f.close()
+        
+        mygraph = Graph.create(name = 'default')
+    
+        self.loadGexfData(data = data, id = mygraph.id)
+
+    def loadGexfData(self, data = None, id = None):
+        start = time.time()
         
         # Passing the stored data inside
         # the beautifulsoup parser, storing
         # the returned object 
         Bs_data = BeautifulSoup(data, "xml")
 
-        mygraph = Graph.create(name = 'default')
+        mygraph = Graph.get(Graph.id == id)
     
+        # Delete all nodes for this graph
+        Node.delete().where(Node.graph.__eq__(id)).execute()
+        # Delete all edges for this graph
+        Edge.delete().where(Edge.graph.__eq__(id)).execute()
+
         # find all nodes
         for node in Bs_data.find_all('node'):
 
             reference = None
             if 'id' in node.attrs:
-                reference = node.attrs['id']
+                reference = "{}".format(node.attrs['id'])
             label = None
             if 'label' in node.attrs:
                 label = node.attrs['label']
@@ -199,7 +235,7 @@ class GraphService(object):
 
             reference = None
             if 'id' in edge.attrs:
-                reference = edge.attrs['id']
+                reference = "{}".format(edge.attrs['id'])
             label = None
             if 'label' in edge.attrs:
                 label = edge.attrs['label']
@@ -216,8 +252,8 @@ class GraphService(object):
                 target = edge.attrs['target']
             
             # find source and target node
-            sourceNode= Node.select().where(Node.reference.__eq__(source))
-            targetNode= Node.select().where(Node.reference.__eq__(target))
+            sourceNode= Node.select().where(Node.graph == id).where(Node.reference == source)
+            targetNode= Node.select().where(Node.graph == id).where(Node.reference == target)
 
             # create a new edge
             edge = Edge.create(label = label, reference = reference, source = sourceNode, target = targetNode, tag = tag, graph = mygraph)
