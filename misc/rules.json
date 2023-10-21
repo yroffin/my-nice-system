@@ -1,0 +1,30 @@
+[
+    {
+        "name": "Each listener must have a label with @reference and not an alias",
+        "sets": [
+            "element[type='node' and data.tag='listener' and (data.alias ? 'empty' : 'full') = 'full']"
+        ],
+        "asserts": [
+            "(data.id ~> /([0-9a-zA-Z/!-]*)[@](reference)/i).match = data.id"
+        ]
+    },
+    {
+        "name": "Each alias listener must have a label terminating by @",
+        "sets": [
+            "element[type='node' and data.tag='listener' and data.alias!='']"
+        ],
+        "asserts": [
+            "(data.id ~> /([0-9a-zA-Z/!-]*)[@]([0-9a-zA-Z/!-]*)/i).match = data.id"
+        ]
+    },
+    {
+        "name": "All edge targeting a listener must have a label 'provide' or 'ClientID: *",
+        "sets": [
+            "element[type='edges' and data.target.tag='listener']"
+        ],
+        "asserts": [
+            "data.label = 'provide'",
+            "data.label ~> /ClientID: ([a-z]*[A-Z]*[-!]*[0-9]*)*/i"
+        ]
+    }
+]
