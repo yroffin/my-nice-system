@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = ''
 
     # default yaml config file    
-    CONFIG_YAML_LOCATION: str = ".config.yaml"
+    CONFIG_YAML_LOCATION: str = ".tmp/.config.yaml"
 
 @lru_cache
 def get_settings():

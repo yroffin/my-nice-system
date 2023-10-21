@@ -162,3 +162,5 @@ cython_debug/
 .config.yaml
 .my-nice-system
 .nicegui
+misc
+.tmp

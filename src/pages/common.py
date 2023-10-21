@@ -39,9 +39,8 @@ class StandardPage():
             return False
 
         session_roles = []
-        with ui.header(elevated=True).style('background-color: #c3e3bf').classes('items-center justify-between'):
+        with ui.header(elevated=True).style('background-color: #e8dfdf').classes('items-center justify-between'):
 
-            session_token_auth2 = config['security']['auth2_token_name']
             logging.debug('Read from session {}'.format(app.storage.user))
     
             if 'identity' in app.storage.user and app.storage.user['identity']:
@@ -62,28 +61,42 @@ class StandardPage():
                 allRoleMatch = False
 
         with self.body:
-            ui.label("Role: {}".format(roles))
-            ui.separator()
             if not allRoleMatch:
                 ui.label('/!\ permission denied')
             else:
                 None
 
-        with ui.left_drawer(top_corner=True, bottom_corner=True).style('background-color: #dfe6df'):
-            for link in config['gui']['links']:
-                ui.link(link['name'],link['route'])
-                ui.separator()
-            self.chatArea()
+        self.left_side = ui.left_drawer(top_corner=True, bottom_corner=True)
+        with self.left_side.style('background-color: #bdb7b7'):
+            ui.link('all graphs','/graphs')
     
-        with ui.dialog() as dialog, ui.card():
+        self.session_dialog = ui.dialog()
+        with self.session_dialog, ui.card():
             ui.json_editor({'content': {'json': app.storage.user}},
                     on_select=lambda e: ui.notify(f'Select: {e}'),
                     on_change=lambda e: ui.notify(f'Change: {e}'))
-        
-        with ui.footer().style('background-color: #c3e3bf'):
-            ui.button('Session', on_click=dialog.open)
-        
+
+        self.chat_dialog = ui.dialog()
+        with self.chat_dialog, ui.card():
+            self.chatArea()
+
+        with ui.footer().style('background-color: #e8dfdf'):
+            if not allRoleMatch:
+                ui.label('/!\ permission denied')
+            else:
+                ui.button('Chat', on_click=self.chat_dialog.open)
+                ui.button('Session', on_click=self.session_dialog.open)
+                self.switch = ui.switch('left side', value = True)
+                self.switch.on(type = 'update:model-value', handler = lambda: self.on_switch())
+
         return allRoleMatch
+
+    # Switch left side pane
+    def on_switch(self):
+        if self.switch.value:
+            self.left_side.show()
+        else:
+            self.left_side.hide()
 
     # Chat a new message
     def chat(self, message = None, detail = None, avatar = 'info'):
