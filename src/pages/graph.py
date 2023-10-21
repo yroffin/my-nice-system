@@ -160,11 +160,13 @@ class GraphPage(StandardPage):
         self.nodeColumns = [
             {'name': 'id', 'label': 'Id', 'field': 'id', 'sortable': True},
             {'name': 'label', 'label': 'Label', 'field': 'label', 'sortable': True},
+            {'name': 'action', 'label': 'Select'}
         ]
 
         self.edgeColumns = [
             {'name': 'id', 'label': 'Id', 'field': 'id', 'sortable': True},
             {'name': 'label', 'label': 'Label', 'field': 'label', 'sortable': True},
+            {'name': 'action', 'label': 'Select'}
         ]
 
         self.data_node = {
@@ -183,8 +185,27 @@ class GraphPage(StandardPage):
                 "label": node['label']
                 })
 
-        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single", on_select=lambda: self.select(table))
+        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single")
         table.classes('w-full')
+
+        table.add_slot('body', r'''
+            <q-tr :props="props">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                    {{ col.value }}
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('selectNode', props.row)"
+                        :icon="'search'" />
+                </q-td>
+            </q-tr>
+        ''')
+
+        table.on('selectNode', self.selectNode)
+
+    def selectNode(self, e: events.GenericEventArguments) -> None:
+        self.dialog_search_node.close()
+        self.cytoscape.select(e.args['id'])
 
     @ui.refreshable
     def tableEdge(self) -> None:
@@ -195,12 +216,27 @@ class GraphPage(StandardPage):
                 "label": edge['label']
                 })
 
-        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single", on_select=lambda: self.select(table))
+        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single")
         table.classes('w-full')
 
-    async def select(self, table):
-        if len(table.selected) != 0:
-            self.cytoscape.select(table.selected[0]['id'])
+        table.add_slot('body', r'''
+            <q-tr :props="props">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                    {{ col.value }}
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('selectEdge', props.row)"
+                        :icon="'search'" />
+                </q-td>
+            </q-tr>
+        ''')
+
+        table.on('selectEdge', self.selectEdge)
+
+    def selectEdge(self, e: events.GenericEventArguments) -> None:
+        self.dialog_search_edge.close()
+        self.cytoscape.select(e.args['id'])
 
     def build(self, request, id):
         # Call inheritance to check roles

@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 from nicegui.element import Element
 from nicegui import ui,app
 
+import json
 import logging
 
 class Cytoscape(Element, component='cytoscape.js'):
@@ -40,6 +41,7 @@ class Cytoscape(Element, component='cytoscape.js'):
         self.on('event', self.handle_event)
       
     def handle_event(self, event):
+      print(json.dumps(event.args, indent = 2))
 
       if event.args['type'] == 'click' and event.args['target']['type'] == 'node':
         if self.on_click_node:
