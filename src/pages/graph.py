@@ -262,6 +262,7 @@ class GraphPage(StandardPage):
                     ui.button('Store', on_click=lambda: self.onStore())
 
                 ui.button('Store', on_click=lambda: self.dialog_parameters.open())
+                ui.button('Scan', on_click=lambda: self.getNodes())
                 ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
                 ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
 
@@ -286,6 +287,9 @@ class GraphPage(StandardPage):
 
     def onClone(self, data = None, graph = None):
         return GraphService().cloneNode(clone = data, id = graph)
+
+    def getNodes(self):
+        self.cytoscape.getNodes()
 
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):

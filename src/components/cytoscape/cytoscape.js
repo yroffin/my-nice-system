@@ -175,8 +175,6 @@ export default {
       this.container.$(`#${data.id}`).remove()
     },
     cloneNode(data) {
-      console.log(data)
-
       let cloned = {
         data: {
           id: data.id,
@@ -192,7 +190,14 @@ export default {
         }
       }
       this.container.add(cloned)
-
+    },
+    getNodes() {
+      this.$emit("nodes", _.map(this.container.nodes("#"), (node) => {
+        return {
+          data: node.data(),
+          position: node.position()
+        }
+      }));
     }
   },
   template: `

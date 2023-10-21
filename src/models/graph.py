@@ -73,6 +73,13 @@ class GraphService(object):
         deleted = Node.delete().where(Node.id == id[1:]).execute()
         logging.info("Drop {} node with id {}".format(deleted, id[1:]))
 
+    def updateNodePosition(self, id, x, y):
+        # Update position
+        node = Node.get(Node.id == id[1:])
+        node.x = x
+        node.y = y
+        node.save()
+
     def cloneNode(self, clone, id):
         mygraph = Graph.get(Graph.id == id)
 

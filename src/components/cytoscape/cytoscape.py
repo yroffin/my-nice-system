@@ -6,6 +6,8 @@ from nicegui import ui,app
 import json
 import logging
 
+from models.graph import GraphService
+
 class Cytoscape(Element, component='cytoscape.js'):
 
     def __init__(
@@ -40,7 +42,9 @@ class Cytoscape(Element, component='cytoscape.js'):
       }}
 </style>
             ''')
+
         self.on('event', self.handle_event)
+        self.on('nodes', self.nodes)
 
         self.data_node = {
             "label": ""
@@ -93,3 +97,10 @@ class Cytoscape(Element, component='cytoscape.js'):
     def cloneNode(self, data, graph):
        cloned = self.onClone(data, graph)
        self.run_method('cloneNode', cloned)
+
+    def getNodes(self):
+       self.run_method('getNodes')
+
+    def nodes(self, event):
+       for node in event.args:
+          GraphService().updateNodePosition(node['data']['id'], node['position']['x'], node['position']['y'])
