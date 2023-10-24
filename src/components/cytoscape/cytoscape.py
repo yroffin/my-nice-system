@@ -33,6 +33,7 @@ class Cytoscape(Element, component='cytoscape.js'):
         ui.add_head_html('<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>')
         ui.add_head_html('<script src="/static/cytoscape-edgehandles.js"></script>')
         ui.add_head_html('<script src="/static/cytoscape-snap-to-grid.js"></script>')
+        ui.add_head_html('<script src="/static/cytoscape-automove.js"></script>')
         ui.add_head_html(
             f'''
 <style>
@@ -49,7 +50,8 @@ class Cytoscape(Element, component='cytoscape.js'):
         self.on('nodes', self.nodes)
 
         self.data_node = {
-            "label": ""
+            "label": "",
+            "group": ""
         }
 
         self.data_edge = {
@@ -63,6 +65,11 @@ class Cytoscape(Element, component='cytoscape.js'):
             label = ui.input(label='Label', placeholder='start typing',
                 validation={'Input too long': lambda value: len(value) < 255})
             label.bind_value(self.data_node, target_name = 'label')
+
+            group = ui.input(label='Group', placeholder='start typing',
+                validation={'Input too long': lambda value: len(value) < 255})
+            group.bind_value(self.data_node, target_name = 'group')
+
             ui.button('Drop', on_click=lambda: self.dropNode(self.data_node['selected']))
             ui.button('Clone', on_click=lambda: self.cloneNode(self.data_node['selected'], self.graph))
             ui.button('Draw', on_click=lambda: self.start())
@@ -84,6 +91,8 @@ class Cytoscape(Element, component='cytoscape.js'):
 
       if event.args['type'] == 'click' and event.args['target']['type'] == 'node':
         self.data_node['label'] = event.args['target']['data']['label']
+        if 'group' in event.args['target']['data']:
+           self.data_node['group'] = event.args['target']['data']['group']
         self.data_node['selected'] = event.args['target']
         self.dialog_node.open()
 
@@ -103,11 +112,15 @@ class Cytoscape(Element, component='cytoscape.js'):
         ui.timer(0.1, lambda: ui.run_javascript('window.location.reload()'), once=True)
 
     def start(self):
-       self.run_method('start', self.data_node['selected'])
-       self.dialog_node.close()
+      self.run_method('start', self.data_node['selected'])
+      self.dialog_node.close()
 
     def drawMode(self, value):
-       self.run_method('drawMode', value)
+      self.run_method('drawMode', value)
+
+    def groupMode(self, value):
+      groups = GraphService().getGroups(self.graph)
+      self.run_method('groupMode', value, groups)
 
     def select(self, data):
        self.run_method('select', data)

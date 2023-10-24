@@ -72,7 +72,9 @@ function build(cy, mygraph) {
     }
   })
 
+  // Build style
   cy.style(mystyle)
+
   cy.endBatch()
   cy.fit()
 }
@@ -90,7 +92,7 @@ export default {
       });
 
       // Add cytoscape edgehandles
-      let defaults = {
+      this.edgehandles = this.container.edgehandles({
         canConnect: function (sourceNode, targetNode) {
           // whether an edge can be created between source and target
           return !sourceNode.same(targetNode); // e.g. disallow loops
@@ -106,10 +108,13 @@ export default {
         snapFrequency: 15, // the number of times per second (Hz) that snap checks done (lower is less expensive)
         noEdgeEventsInDraw: true, // set events:no to edges during draws, prevents mouseouts on compounds
         disableBrowserGestures: true // during an edge drawing gesture, disable browser gestures such as two-finger trackpad swipe and pinch-to-zoom      
-      }
-      this.edgehandles = this.container.edgehandles(defaults)
+      })
+      // Add cytoscape snapToGrid
       this.snapToGrid = this.container.snapToGrid({
         gridSpacing: 100
+      })
+      // Add cytoscape automove
+      this.automove = this.container.automove({
       })
 
       const emitNode = (evt) => {
@@ -199,12 +204,40 @@ export default {
         emitEdgeHandle(event, sourceNode, targetNode, addedEdge)
       });
 
+      // Rules
+      this.rules = []
+
       // build graph
       build(this.container, this.model)
     }
 
   },
   methods: {
+    groupMode(enable, groups) {
+      if (enable) {
+        // Enable all group
+        _.each(this.rules, (rule) => {
+          rule.destroy()
+        })
+
+        this.rules = []
+
+        _.each(groups, (group) => {
+          let selectedGroup = this.container.$(`[group = "${group}"]`)
+          this.rules.push(container.automove({
+            nodesMatching: selectedGroup,
+            reposition: 'drag',
+            dragWith: selectedGroup,
+          }))
+        })
+      } else {
+        // Disable group
+        _.each(this.rules, (rule) => {
+          rule.destroy()
+        })
+        this.rules = []
+      }
+    },
     select(data) {
       this.container.center(this.container.$(`#${data}`))
     },

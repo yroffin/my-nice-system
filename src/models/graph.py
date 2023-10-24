@@ -150,6 +150,16 @@ class GraphService(object):
     def createGraph(self, name = 'default'):
         Graph.create(name = name)
 
+    def getGroups(self, graph = None):
+        keys = {}
+        for node in Node.select().where(Node.graph == graph):
+            if len(node.group) > 0:
+                keys[node.group] =True
+        result = []
+        for key in keys:
+            result.append(key)
+        return result
+
     def nodes(self, graph = None):
         result = []
         for node in Node.select().where(Node.graph == graph):
@@ -187,6 +197,7 @@ class GraphService(object):
                     "id": "n{}".format(node.id),
                     "reference": node.reference,
                     "label": node.label,
+                    "group": node.group,
                     "tag": node.tag,
                     "x": node.x,
                     "y": node.y

@@ -270,9 +270,15 @@ class GraphPage(StandardPage):
                     "enabled": False
                 }
 
+                self.grp = {
+                    "enabled": False
+                }
+
                 self.cytoscape = None
-                switch = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
-                switch.bind_value(self.sw, target_name="enabled")
+                switch_sw = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
+                switch_sw.bind_value(self.sw, target_name="enabled")
+                switch_grp = ui.switch('group mode', on_change=lambda: self.onSwithGroup())
+                switch_grp.bind_value(self.grp, target_name="enabled")
 
                 self.myGraph = GraphService().graph(id = id)
 
@@ -287,6 +293,10 @@ class GraphPage(StandardPage):
     def onSwithLink(self):
         if self.cytoscape:
             self.cytoscape.drawMode(self.sw['enabled'])
+
+    def onSwithGroup(self):
+        if self.cytoscape:
+            self.cytoscape.groupMode(self.grp['enabled'])
 
     def onStore(self):
         app.storage.user['graph_properties'] = self.data
