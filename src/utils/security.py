@@ -74,6 +74,7 @@ class SecurityService(object):
     def startup(self):
         logging.info('Load middleware')
         app.add_middleware(AuthMiddleware)
+        app.add_static_files('/static', 'static')
         ui.run(title = 'Devops GUI', storage_secret=config['gui']['secret'])
 
     def initiateCodeFlow(self, request = None, scopes = None):

@@ -266,6 +266,14 @@ class GraphPage(StandardPage):
                 ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
                 ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
 
+                self.sw = {
+                    "enabled": False
+                }
+
+                self.cytoscape = None
+                switch = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
+                switch.bind_value(self.sw, target_name="enabled")
+
                 self.myGraph = GraphService().graph(id = id)
 
                 with ui.card():
@@ -276,6 +284,10 @@ class GraphPage(StandardPage):
                         graph = self.graph,
                         onDrop = self.onDrop,
                         onClone = self.onClone)
+
+    def onSwithLink(self):
+        if self.cytoscape:
+            self.cytoscape.drawMode(self.sw['enabled'])
 
     def onStore(self):
         app.storage.user['graph_properties'] = self.data

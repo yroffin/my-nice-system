@@ -4,7 +4,7 @@ from nicegui.element import Element
 from nicegui import ui,app
 
 import json
-import logging
+import asyncio
 
 from models.graph import GraphService
 
@@ -32,6 +32,7 @@ class Cytoscape(Element, component='cytoscape.js'):
         self._props['edges'] = model['edges']
         ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>')
         ui.add_head_html('<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>')
+        ui.add_head_html('<script src="/static/cytoscape-edgehandles.js"></script>')
         ui.add_head_html(
             f'''
 <style>
@@ -44,6 +45,7 @@ class Cytoscape(Element, component='cytoscape.js'):
             ''')
 
         self.on('event', self.handle_event)
+        self.on('edgehandle', self.handle_eventedgehandle)
         self.on('nodes', self.nodes)
 
         self.data_node = {
@@ -63,6 +65,7 @@ class Cytoscape(Element, component='cytoscape.js'):
             label.bind_value(self.data_node, target_name = 'label')
             ui.button('Drop', on_click=lambda: self.dropNode(self.data_node['selected']))
             ui.button('Clone', on_click=lambda: self.cloneNode(self.data_node['selected'], self.graph))
+            ui.button('Draw', on_click=lambda: self.start())
             ui.button('Close', on_click=self.dialog_node.close)
 
         # select dialog node
@@ -75,7 +78,8 @@ class Cytoscape(Element, component='cytoscape.js'):
             ui.button('Close', on_click=self.dialog_edge.close)
 
     def handle_event(self, event):
-      print(json.dumps(event.args, indent = 2))
+      if event.args["type"] not in ['mouseout','mouseover']:
+        print(json.dumps(event.args, indent = 2))
 
       if event.args['type'] == 'click' and event.args['target']['type'] == 'node':
         self.data_node['label'] = event.args['target']['data']['label']
@@ -86,6 +90,23 @@ class Cytoscape(Element, component='cytoscape.js'):
         self.data_edge['label'] = event.args['target']['data']['label']
         self.data_edge['selected'] = event.args['target']
         self.dialog_edge.open()
+
+    def handle_eventedgehandle(self, event):
+      print(json.dumps(event.args, indent = 2))
+
+      if event.args['type'] == "ehcomplete":
+        GraphService().addEdge(
+            source = event.args['addedEdge']['source'],
+            target = event.args['addedEdge']['target']
+          )
+        ui.timer(0.1, lambda: ui.run_javascript('window.location.reload()'), once=True)
+
+    def start(self):
+       self.run_method('start', self.data_node['selected'])
+       self.dialog_node.close()
+
+    def drawMode(self, value):
+       self.run_method('drawMode', value)
 
     def select(self, data):
        self.run_method('select', data)

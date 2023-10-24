@@ -80,6 +80,14 @@ class GraphService(object):
         node.y = y
         node.save()
 
+    def addEdge(self, source = None, target = None):
+        # Add new edge
+        sourceNode = Node.get(Node.id == source[1:])
+        targetNode = Node.get(Node.id == target[1:])
+
+        # create a new edge
+        edge = Edge.create(label = "default", reference = "", source = sourceNode, target = targetNode, graph = sourceNode.graph)
+
     def cloneNode(self, clone, id):
         mygraph = Graph.get(Graph.id == id)
 
@@ -158,14 +166,15 @@ class GraphService(object):
         return result
 
     def graph(self, id: str = None):
+        result = {
+                "id": id,
+                "nodes": [],
+                "edges": [],
+                "styles": []
+            }
         for graph in Graph.select().where(Graph.id == id):
-            result = {
-                    "id": graph.id,
-                    "name": graph.name,
-                    "nodes": [],
-                    "edges": [],
-                    "styles": []
-                }
+            result['name'] = graph.name
+
             for node in Node.select().where(Node.graph == id):
                 result['nodes'].append({
                     "id": "n{}".format(node.id),

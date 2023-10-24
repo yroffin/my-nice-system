@@ -81,13 +81,33 @@ export default {
   mounted: function () {
     if (!this.container) {
       // builld container
-      this.container = cytoscape({
+      this.container = window.container = cytoscape({
         container: document.getElementById("container"),
         layout: { name: 'preset' },
         motionBlur: true,
         selectionType: 'single',
         boxSelectionEnabled: false
       });
+
+      // Add cytoscape edgehandles
+      let defaults = {
+        canConnect: function (sourceNode, targetNode) {
+          // whether an edge can be created between source and target
+          return !sourceNode.same(targetNode); // e.g. disallow loops
+        },
+        edgeParams: function (sourceNode, targetNode) {
+          // for edges between the specified source and target
+          // return element object to be passed to cy.add() for edge
+          return {};
+        },
+        hoverDelay: 150, // time spent hovering over a target node before it is considered selected
+        snap: true, // when enabled, the edge can be drawn by just moving close to a target node (can be confusing on compound graphs)
+        snapThreshold: 50, // the target node must be less than or equal to this many pixels away from the cursor/finger
+        snapFrequency: 15, // the number of times per second (Hz) that snap checks done (lower is less expensive)
+        noEdgeEventsInDraw: true, // set events:no to edges during draws, prevents mouseouts on compounds
+        disableBrowserGestures: true // during an edge drawing gesture, disable browser gestures such as two-finger trackpad swipe and pinch-to-zoom      
+      }
+      this.edgehandles = this.container.edgehandles(defaults)
 
       const emitNode = (evt) => {
         this.$emit("event", {
@@ -113,6 +133,16 @@ export default {
             data: evt.target.data(),
             type: 'edge'
           }
+        });
+      }
+
+      const emitEdgeHandle = (evt, sourceNode, targetNode, addedEdge) => {
+        console.log(addedEdge)
+        this.$emit("edgehandle", {
+          type: evt.type,
+          sourceNode: sourceNode.data(),
+          targetNode: targetNode.data(),
+          addedEdge: addedEdge.data()
         });
       }
 
@@ -162,6 +192,10 @@ export default {
         emitEdge(event)
       });
 
+      this.container.on('ehcomplete', (event, sourceNode, targetNode, addedEdge) => {
+        emitEdgeHandle(event, sourceNode, targetNode, addedEdge)
+      });
+
       // build graph
       build(this.container, this.model)
     }
@@ -198,6 +232,26 @@ export default {
           position: node.position()
         }
       }));
+    },
+    /**
+     * start draw mode
+     * @param {*} data 
+     */
+    start(data) {
+      let selected = this.container.$(`#${data.id}`)
+      this.container.center(selected)
+      this.edgehandles.start(selected)
+    },
+    /**
+     * fi draw mode behaviour
+     * @param {*} enable 
+     */
+    drawMode(enable) {
+      if (enable) {
+        this.edgehandles.enableDrawMode()
+      } else {
+        this.edgehandles.disableDrawMode()
+      }
     }
   },
   template: `
