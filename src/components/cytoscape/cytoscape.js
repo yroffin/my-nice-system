@@ -108,6 +108,9 @@ export default {
         disableBrowserGestures: true // during an edge drawing gesture, disable browser gestures such as two-finger trackpad swipe and pinch-to-zoom      
       }
       this.edgehandles = this.container.edgehandles(defaults)
+      this.snapToGrid = this.container.snapToGrid({
+        gridSpacing: 100
+      })
 
       const emitNode = (evt) => {
         this.$emit("event", {
@@ -206,6 +209,10 @@ export default {
       this.container.center(this.container.$(`#${data}`))
     },
     dropNode(data) {
+      this.container.$(`#${data.id}`).remove()
+    },
+    dropEdge(data) {
+      console.log(data)
       this.container.$(`#${data.id}`).remove()
     },
     cloneNode(data) {

@@ -72,6 +72,13 @@ class GraphService(object):
         # Delete this node
         deleted = Node.delete().where(Node.id == id[1:]).execute()
         logging.info("Drop {} node with id {}".format(deleted, id[1:]))
+        return deleted
+
+    def dropEdge(self, id):
+        # Delete edge
+        deleted = Edge.delete().where(Edge.id == id[1:]).execute()
+        logging.info("Drop {} edge with id {}".format(deleted, id[1:]))
+        return deleted
 
     def updateNodePosition(self, id, x, y):
         # Update position

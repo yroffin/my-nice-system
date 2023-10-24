@@ -17,12 +17,10 @@ class Cytoscape(Element, component='cytoscape.js'):
           width = None,
           height = None,
           graph = None,
-          onDrop: Optional[Callable[..., Any]] = None, 
           onClone: Optional[Callable[..., Any]] = None, 
         ):
         super().__init__()
 
-        self.onDrop = onDrop
         self.onClone = onClone
         self.graph = graph
 
@@ -31,8 +29,10 @@ class Cytoscape(Element, component='cytoscape.js'):
         self._props['nodes'] = model['nodes']
         self._props['edges'] = model['edges']
         ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>')
+        ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>')
         ui.add_head_html('<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>')
         ui.add_head_html('<script src="/static/cytoscape-edgehandles.js"></script>')
+        ui.add_head_html('<script src="/static/cytoscape-snap-to-grid.js"></script>')
         ui.add_head_html(
             f'''
 <style>
@@ -75,6 +75,7 @@ class Cytoscape(Element, component='cytoscape.js'):
             label = ui.input(label='Label', placeholder='start typing',
                 validation={'Input too long': lambda value: len(value) < 255})
             label.bind_value(self.data_edge, target_name = 'label')
+            ui.button('Drop', on_click=lambda: self.dropEdge(self.data_edge['selected']))
             ui.button('Close', on_click=self.dialog_edge.close)
 
     def handle_event(self, event):
@@ -112,8 +113,12 @@ class Cytoscape(Element, component='cytoscape.js'):
        self.run_method('select', data)
 
     def dropNode(self, data):
-       dropped = self.onDrop(data)
-       self.run_method('dropNode', dropped)
+      GraphService().dropNode(data["id"])
+      self.run_method('dropNode', data)
+
+    def dropEdge(self, data):
+      GraphService().dropEdge(data["id"])
+      self.run_method('dropEdge', data)
 
     def cloneNode(self, data, graph):
        cloned = self.onClone(data, graph)

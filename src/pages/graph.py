@@ -282,7 +282,6 @@ class GraphPage(StandardPage):
                         width = self.data['width'],
                         height = self.data['height'],
                         graph = self.graph,
-                        onDrop = self.onDrop,
                         onClone = self.onClone)
 
     def onSwithLink(self):
@@ -292,10 +291,6 @@ class GraphPage(StandardPage):
     def onStore(self):
         app.storage.user['graph_properties'] = self.data
         self.dialog_parameters.close()
-
-    def onDrop(self, data = None):
-        GraphService().dropNode(data["id"])
-        return data
 
     def onClone(self, data = None, graph = None):
         return GraphService().cloneNode(clone = data, id = graph)
