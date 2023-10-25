@@ -52,7 +52,6 @@ export default {
       }
 
       const emitEdge = (evt) => {
-        console.log(evt)
         this.$emit("event", {
           type: evt.type,
           target: {
@@ -64,7 +63,6 @@ export default {
       }
 
       const emitEdgeHandle = (evt, sourceNode, targetNode, addedEdge) => {
-        console.log(addedEdge)
         this.$emit("edgehandle", {
           type: evt.type,
           sourceNode: sourceNode.data(),
@@ -136,8 +134,6 @@ export default {
      */
     loadNodes(mygraph) {
       let cy = this.container
-
-      console.log("loadNodes", cy)
 
       // Disable existing rules
       _.each(this.rules, (rule) => {
@@ -293,8 +289,8 @@ export default {
       }
       this.container.add(cloned)
     },
-    getNodes() {
-      this.$emit("nodes", _.map(this.container.nodes("#"), (node) => {
+    updateNodePosition() {
+      this.$emit("updateNodePosition", _.map(this.container.nodes(), (node) => {
         return {
           data: node.data(),
           position: node.position()

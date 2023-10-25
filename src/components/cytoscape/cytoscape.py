@@ -4,11 +4,14 @@ from nicegui.element import Element
 from nicegui import ui,app
 
 import json
-import asyncio
+import logging
 
 from models.graph import GraphService
 
 class Cytoscape(Element, component='cytoscape.js'):
+    """
+    This component is based on https://js.cytoscape.org/
+    """
 
     def __init__(
           self,
@@ -42,7 +45,7 @@ class Cytoscape(Element, component='cytoscape.js'):
 
         self.on('event', self.handle_event)
         self.on('edgehandle', self.handle_eventedgehandle)
-        self.on('nodes', self.nodes)
+        self.on('updateNodePosition', self.updateNodePosition)
 
         self.data_node = {
             "label": "",
@@ -82,7 +85,7 @@ class Cytoscape(Element, component='cytoscape.js'):
 
     def handle_event(self, event):
       if event.args["type"] not in ['mouseout','mouseover']:
-        print(json.dumps(event.args, indent = 2))
+        logging.info(json.dumps(event.args))
 
       if event.args['type'] == 'click' and event.args['target']['type'] == 'node':
         self.data_node['label'] = event.args['target']['data']['label']
@@ -97,7 +100,11 @@ class Cytoscape(Element, component='cytoscape.js'):
         self.dialog_edge.open()
 
     def handle_eventedgehandle(self, event):
-      print(json.dumps(event.args, indent = 2))
+      """
+      Handle edgehandle events
+      Cf. https://github.com/cytoscape/cytoscape.js-edgehandles
+      """
+      logging.info(json.dumps(event.args))
 
       if event.args['type'] == "ehcomplete":
         GraphService().addEdge(
@@ -107,41 +114,60 @@ class Cytoscape(Element, component='cytoscape.js'):
         graph = GraphService().graph(id = self.graph)
         self.run_method("loadNodes", graph)
 
-    def start(self):
-      self.run_method('start', self.data_node['selected'])
-      self.dialog_node.close()
-
-    def drawMode(self, value):
-      self.run_method('drawMode', value)
-
-    def groupMode(self, value):
-      groups = GraphService().getGroups(self.graph)
-      self.run_method('groupMode', value, groups)
-
-    def select(self, data):
-       self.run_method('select', data)
-
-    def dropNode(self, data):
-      GraphService().dropNode(data["id"])
-      self.run_method('dropNode', data)
-
-    def dropEdge(self, data):
-      GraphService().dropEdge(data["id"])
-      self.run_method('dropEdge', data)
-
-    def cloneNode(self, data, graph):
-       cloned = GraphService().cloneNode(clone = data, id = graph)
-       self.run_method('cloneNode', cloned)
-
-    def getNodes(self):
-       self.run_method('getNodes')
-
     def loadNodes(self, graph):
+      """
+      reload graph (nodes and edges)
+      """
       self.run_method("loadNodes", graph)
 
     def loadStyle(self, graph):
       self.run_method("loadStyle", graph)
 
-    def nodes(self, event):
+    def start(self):
+      """
+      start linking two nodes with edgehandle extention
+      """
+      self.run_method('start', self.data_node['selected'])
+      self.dialog_node.close()
+
+    def drawMode(self, value):
+      """
+      switch draw mode with edgehandle extention
+      """
+      self.run_method('drawMode', value)
+
+    def groupMode(self, value):
+      """
+      activate/disable group mode
+      Cf. https://github.com/cytoscape/cytoscape.js-automove/blob/master/cytoscape-automove.js
+      """
+      groups = GraphService().getGroups(self.graph)
+      self.run_method('groupMode', value, groups)
+
+    def select(self, data):
+       """
+       Select a single node onto current raph
+       """
+       self.run_method('select', data)
+
+    def dropNode(self, data):
+      GraphService().dropNode(data["id"])
+      self.run_method('dropNode', data)
+      self.dialog_node.close()
+
+    def dropEdge(self, data):
+      GraphService().dropEdge(data["id"])
+      self.run_method('dropEdge', data)
+      self.dialog_edge.close()
+
+    def cloneNode(self, data, graph):
+       cloned = GraphService().cloneNode(clone = data, id = graph)
+       self.run_method('cloneNode', cloned)
+       self.dialog_node.close()
+
+    def getNodes(self):
+       self.run_method('updateNodePosition')
+
+    def updateNodePosition(self, event):
        for node in event.args:
           GraphService().updateNodePosition(node['data']['id'], node['position']['x'], node['position']['y'])

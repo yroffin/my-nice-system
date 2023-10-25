@@ -262,10 +262,10 @@ class GraphPage(StandardPage):
                     ui.button('Store', on_click=lambda: self.onStore())
 
                 ui.button('Store', on_click=lambda: self.dialog_parameters.open())
-                ui.button('Scan', on_click=lambda: self.getNodes())
+                ui.button('Save', on_click=lambda: self.getNodes())
                 ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
                 ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
-                ui.button('Refresh', on_click=lambda: self.refresh())
+                ui.button('Reload from server', on_click=lambda: self.refresh())
 
                 self.sw = {
                     "enabled": False
