@@ -13,21 +13,16 @@ class Cytoscape(Element, component='cytoscape.js'):
     def __init__(
           self,
           title: str,
-          model = None, 
           width = None,
           height = None,
-          graph = None,
-          onClone: Optional[Callable[..., Any]] = None, 
+          graph = None
         ):
         super().__init__()
 
-        self.onClone = onClone
+        # store graph id
         self.graph = graph
 
         self._props['title'] = title
-        self._props['model'] = model
-        self._props['nodes'] = model['nodes']
-        self._props['edges'] = model['edges']
         ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>')
         ui.add_head_html('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>')
         ui.add_head_html('<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>')
@@ -109,7 +104,8 @@ class Cytoscape(Element, component='cytoscape.js'):
             source = event.args['addedEdge']['source'],
             target = event.args['addedEdge']['target']
           )
-        ui.timer(0.1, lambda: ui.run_javascript('window.location.reload()'), once=True)
+        graph = GraphService().graph(id = self.graph)
+        self.run_method("loadNodes", graph)
 
     def start(self):
       self.run_method('start', self.data_node['selected'])
@@ -134,11 +130,17 @@ class Cytoscape(Element, component='cytoscape.js'):
       self.run_method('dropEdge', data)
 
     def cloneNode(self, data, graph):
-       cloned = self.onClone(data, graph)
+       cloned = GraphService().cloneNode(clone = data, id = graph)
        self.run_method('cloneNode', cloned)
 
     def getNodes(self):
        self.run_method('getNodes')
+
+    def loadNodes(self, graph):
+      self.run_method("loadNodes", graph)
+
+    def loadStyle(self, graph):
+      self.run_method("loadStyle", graph)
 
     def nodes(self, event):
        for node in event.args:

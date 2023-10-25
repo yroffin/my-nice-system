@@ -1,84 +1,3 @@
-function build(cy, mygraph) {
-  // refresh render
-  cy.startBatch()
-  cy.nodes().remove()
-  cy.edges().remove()
-
-  if (mygraph.nodes) {
-    const mynodes = _.map(mygraph.nodes, (node) => {
-      return {
-        data: {
-          id: node.id,
-          label: node.label,
-          cdata: node.cdata,
-          alias: node.alias,
-          group: node.group,
-          tag: node.tag
-        },
-        position: {
-          x: node.x,
-          y: node.y
-        }
-      }
-    })
-    cy.add(mynodes)
-  }
-
-  if (mygraph.edges) {
-    const myedges = _.map(mygraph.edges, (edge) => {
-      return {
-        data: {
-          id: edge.id,
-          label: edge.label,
-          source: edge.source,
-          target: edge.target,
-          _source: edge._source,
-          _target: edge._target,
-          tag: edge.tag
-        }
-      }
-    })
-    cy.add(myedges)
-  }
-
-  const content = (element) => {
-    let cdata = element.data().cdata ? '*' : ''
-    let alias = element.data().alias ? '@' : ''
-    if (element.data().label && element.data().group) {
-      return `${element.data().label} (${element.data().group}) ${cdata} ${alias}`
-    }
-    if (element.data().label) {
-      return `${element.data().label} ${cdata} ${alias}`
-    }
-    return ""
-  }
-
-  const mystyle = _.map(mygraph.styles, (tag) => {
-    if (!tag.label) {
-      let result = {
-        selector: `${tag.selector}`,
-        style: tag.style,
-      }
-      result.style.content = content
-      return result
-    } else {
-      let result = {
-        label: tag.label,
-        selector: `${tag.selector}[tag = '${tag.label}']`,
-        style: tag.style
-      }
-      result.style.content = content
-      return result
-    }
-  })
-
-  // Build style
-  cy.style(mystyle)
-
-  cy.endBatch()
-  cy.fit()
-}
-
 export default {
   mounted: function () {
     if (!this.container) {
@@ -206,13 +125,118 @@ export default {
 
       // Rules
       this.rules = []
-
-      // build graph
-      build(this.container, this.model)
     }
 
   },
   methods: {
+    /**
+     * load nodes
+     * @param {*} cy 
+     * @param {*} mygraph 
+     */
+    loadNodes(mygraph) {
+      let cy = this.container
+
+      console.log("loadNodes", cy)
+
+      // Disable existing rules
+      _.each(this.rules, (rule) => {
+        rule.destroy()
+      })
+
+      // refresh render
+      cy.startBatch()
+      cy.nodes().remove()
+      cy.edges().remove()
+
+      if (mygraph.nodes) {
+        const mynodes = _.map(mygraph.nodes, (node) => {
+          return {
+            data: {
+              id: node.id,
+              label: node.label,
+              cdata: node.cdata,
+              alias: node.alias,
+              group: node.group,
+              tag: node.tag
+            },
+            position: {
+              x: node.x,
+              y: node.y
+            }
+          }
+        })
+        cy.add(mynodes)
+      }
+
+      if (mygraph.edges) {
+        const myedges = _.map(mygraph.edges, (edge) => {
+          return {
+            data: {
+              id: edge.id,
+              label: edge.label,
+              source: edge.source,
+              target: edge.target,
+              _source: edge._source,
+              _target: edge._target,
+              tag: edge.tag
+            }
+          }
+        })
+        cy.add(myedges)
+      }
+
+      cy.endBatch()
+      cy.fit()
+    },
+    /**
+     * load style
+     * @param {*} cy 
+     * @param {*} mygraph 
+     */
+    loadStyle(mygraph) {
+      let cy = this.container
+
+      // refresh render
+      cy.startBatch()
+
+      const content = (element) => {
+        let cdata = element.data().cdata ? '*' : ''
+        let alias = element.data().alias ? '@' : ''
+        if (element.data().label && element.data().group) {
+          return `${element.data().label} (${element.data().group}) ${cdata} ${alias}`
+        }
+        if (element.data().label) {
+          return `${element.data().label} ${cdata} ${alias}`
+        }
+        return ""
+      }
+
+      const mystyle = _.map(mygraph.styles, (tag) => {
+        if (!tag.label) {
+          let result = {
+            selector: `${tag.selector}`,
+            style: tag.style,
+          }
+          result.style.content = content
+          return result
+        } else {
+          let result = {
+            label: tag.label,
+            selector: `${tag.selector}[tag = '${tag.label}']`,
+            style: tag.style
+          }
+          result.style.content = content
+          return result
+        }
+      })
+
+      // Build style
+      cy.style(mystyle)
+
+      cy.endBatch()
+      cy.fit()
+    },
     groupMode(enable, groups) {
       if (enable) {
         // Enable all group
@@ -241,6 +265,10 @@ export default {
     select(data) {
       this.container.center(this.container.$(`#${data}`))
     },
+    /**
+   * drop node
+   * @param {*} data 
+   */
     dropNode(data) {
       this.container.$(`#${data.id}`).remove()
     },
@@ -306,8 +334,5 @@ export default {
   },
   props: {
     title: String,
-    model: Object,
-    nodes: Array,
-    edges: Array
   },
 };

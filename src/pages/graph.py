@@ -265,6 +265,7 @@ class GraphPage(StandardPage):
                 ui.button('Scan', on_click=lambda: self.getNodes())
                 ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
                 ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+                ui.button('Refresh', on_click=lambda: self.refresh())
 
                 self.sw = {
                     "enabled": False
@@ -284,11 +285,14 @@ class GraphPage(StandardPage):
 
                 with ui.card():
                     self.cytoscape = Cytoscape('Graph', 
-                        model = self.myGraph, 
                         width = self.data['width'],
                         height = self.data['height'],
-                        graph = self.graph,
-                        onClone = self.onClone)
+                        graph = self.graph)
+                    ui.timer(0.1, lambda: self.refresh(), once = True)
+
+    def refresh(self):
+        self.cytoscape.loadNodes(self.myGraph)
+        self.cytoscape.loadStyle(self.myGraph)
 
     def onSwithLink(self):
         if self.cytoscape:
@@ -303,7 +307,7 @@ class GraphPage(StandardPage):
         self.dialog_parameters.close()
 
     def onClone(self, data = None, graph = None):
-        return GraphService().cloneNode(clone = data, id = graph)
+        self.cytoscape.cloneNode(data = data, graph = graph)
 
     def getNodes(self):
         self.cytoscape.getNodes()

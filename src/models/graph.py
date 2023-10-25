@@ -47,9 +47,15 @@ from bs4 import BeautifulSoup
 class GraphService(object): 
 
     def graphById(self, id = None):
+        """
+        Get graph by its id
+        """
         return Graph.get(Graph.id == id)
 
     def graphs(self):
+        """
+        Get all graphs
+        """
         result = []
         for graph in Graph.select():
             mygraph = {
@@ -63,6 +69,10 @@ class GraphService(object):
         return result
 
     def dropNode(self, id):
+        """Return droppped node
+
+        Drop node ny its id (and its edges)
+        """
         # Delete source edge
         deleted = Edge.delete().where(Edge.source == id[1:]).execute()
         logging.info("Drop {} source edge with id {}".format(deleted, id[1:]))
@@ -75,12 +85,20 @@ class GraphService(object):
         return deleted
 
     def dropEdge(self, id):
+        """Return droppped edge
+
+        Drop edge ny its id
+        """
         # Delete edge
         deleted = Edge.delete().where(Edge.id == id[1:]).execute()
         logging.info("Drop {} edge with id {}".format(deleted, id[1:]))
         return deleted
 
     def updateNodePosition(self, id, x, y):
+        """Return nothing
+
+        Update node position
+        """
         # Update position
         node = Node.get(Node.id == id[1:])
         node.x = x
