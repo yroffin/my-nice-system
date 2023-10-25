@@ -168,6 +168,9 @@ class Cytoscape(Element, component='cytoscape.js'):
     def getNodes(self):
        self.run_method('updateNodePosition')
 
+    def fit(self):
+       self.run_method('fit')
+
     def updateNodePosition(self, event):
        for node in event.args:
           GraphService().updateNodePosition(node['data']['id'], node['position']['x'], node['position']['y'])

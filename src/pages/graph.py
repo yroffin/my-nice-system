@@ -261,7 +261,6 @@ class GraphPage(StandardPage):
                     card.style('max-height: 300px')
                     data = []
                     tags = GraphService().getTags(self.graph)
-                    print(tags)
                     for key in tags:
                         data.append({ "value": tags[key], "name": key })
                     self.echart = ui.echart({
@@ -326,15 +325,20 @@ class GraphPage(StandardPage):
                             ui.separator()
                             ui.menu_item('Search node(s)', on_click=lambda: self.dialog_search_node.open())
                             ui.menu_item('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+                            ui.menu_item('Fit', on_click=lambda: self.fit())
                             ui.separator()
                             ui.menu_item('Save', on_click=lambda: self.getNodes())
                             ui.menu_item('Reload from server', on_click=lambda: self.refresh())
                             ui.separator()
                             ui.menu_item('Statistics', on_click=lambda: self.dialog_statistics.open())
 
+    def fit(self):
+        if self.cytoscape:
+            self.cytoscape.fit()
+
     def refresh(self):
-        self.cytoscape.loadNodes(self.myGraph)
         self.cytoscape.loadStyle(self.myGraph)
+        self.cytoscape.loadNodes(self.myGraph)
 
         from random import random
         self.echart.options['series'][0]['data'][0] = random()

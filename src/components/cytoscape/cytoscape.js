@@ -316,6 +316,10 @@ export default {
       } else {
         this.edgehandles.disableDrawMode()
       }
+    },
+    fit() {
+      let cy = this.container
+      cy.fit()
     }
   },
   template: `
