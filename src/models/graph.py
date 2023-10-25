@@ -178,6 +178,15 @@ class GraphService(object):
             result.append(key)
         return result
 
+    def getTags(self, graph = None):
+        keys = {}
+        for node in Node.select().where(Node.graph == graph):
+            if node.tag not in keys:
+                keys[node.tag] = 0
+            if len(node.tag) > 0:
+                keys[node.tag] += 1
+        return keys
+
     def nodes(self, graph = None):
         result = []
         for node in Node.select().where(Node.graph == graph):

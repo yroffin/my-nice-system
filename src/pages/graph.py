@@ -3,7 +3,7 @@ from components.cytoscape.cytoscape import Cytoscape
 from models.graph import GraphService
 from pages.common import StandardPage
 
-from nicegui import app, events, ui
+from nicegui import Tailwind, app, events, ui
 from core.config import config
 import logging
 
@@ -252,6 +252,43 @@ class GraphPage(StandardPage):
                     ui.label('Search')
                     self.tableEdge()
 
+                # select dialog statistics
+                self.dialog_statistics = ui.dialog()
+                with self.dialog_statistics, ui.card() as card:
+                    card.style('width: 1024px')
+                    card.style('max-width: 1024px')
+                    card.style('height: 300px')
+                    card.style('max-height: 300px')
+                    data = []
+                    tags = GraphService().getTags(self.graph)
+                    print(tags)
+                    for key in tags:
+                        data.append({ "value": tags[key], "name": key })
+                    self.echart = ui.echart({
+                        "tooltip": {
+                            "trigger": 'item'
+                        },
+                        "legend": {
+                            "orient": 'vertical',
+                            "left": 'left'
+                        },
+                        "series": [
+                            {
+                            "name": 'Tag',
+                            "type": 'pie',
+                            "radius": '80%',
+                            "data": data,
+                            "emphasis": {
+                                    "itemStyle": {
+                                    "shadowBlur": 10,
+                                    "shadowOffsetX": 0,
+                                    "shadowColor": 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                }
+                            }
+                        ]
+                    })
+
                 # select dialog parameters
                 self.dialog_parameters = ui.dialog()
                 with self.dialog_parameters, ui.card():
@@ -267,32 +304,42 @@ class GraphPage(StandardPage):
                 }
 
                 self.cytoscape = None
-                switch_sw = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
-                switch_sw.bind_value(self.switch, target_name="link")
-                switch_grp = ui.switch('group mode', on_change=lambda: self.onSwithGroup())
-                switch_grp.bind_value(self.switch, target_name="group")
+
+                with ui.column():
+                    switch_sw = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
+                    switch_sw.bind_value(self.switch, target_name="link")
+                    switch_grp = ui.switch('group mode', on_change=lambda: self.onSwithGroup())
+                    switch_grp.bind_value(self.switch, target_name="group")
 
                 self.myGraph = GraphService().graph(id = id)
 
-                with ui.card():
-                    self.cytoscape = Cytoscape('Graph', 
-                        width = self.data['width'],
-                        height = self.data['height'],
-                        graph = self.graph)
-                    ui.timer(0.1, lambda: self.refresh(), once = True)
+                with ui.column():
+                    with ui.card():
+                        self.cytoscape = Cytoscape('Graph', 
+                            width = self.data['width'],
+                            height = self.data['height'],
+                            graph = self.graph)
+                        ui.timer(0.1, lambda: self.refresh(), once = True)
 
-                    with ui.context_menu():
-                        ui.menu_item('Parameter(s)', on_click=lambda: self.dialog_parameters.open())
-                        ui.separator()
-                        ui.menu_item('Search node(s)', on_click=lambda: self.dialog_search_node.open())
-                        ui.menu_item('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
-                        ui.separator()
-                        ui.menu_item('Save', on_click=lambda: self.getNodes())
-                        ui.menu_item('Reload from server', on_click=lambda: self.refresh())
+                        with ui.context_menu():
+                            ui.menu_item('Parameter(s)', on_click=lambda: self.dialog_parameters.open())
+                            ui.separator()
+                            ui.menu_item('Search node(s)', on_click=lambda: self.dialog_search_node.open())
+                            ui.menu_item('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+                            ui.separator()
+                            ui.menu_item('Save', on_click=lambda: self.getNodes())
+                            ui.menu_item('Reload from server', on_click=lambda: self.refresh())
+                            ui.separator()
+                            ui.menu_item('Statistics', on_click=lambda: self.dialog_statistics.open())
 
     def refresh(self):
         self.cytoscape.loadNodes(self.myGraph)
         self.cytoscape.loadStyle(self.myGraph)
+
+        from random import random
+        self.echart.options['series'][0]['data'][0] = random()
+        self.echart.update()
+        ui.notify('Reload graph from server', close_button='OK')
 
     def onSwithLink(self):
         if self.cytoscape:
@@ -311,6 +358,7 @@ class GraphPage(StandardPage):
 
     def getNodes(self):
         self.cytoscape.getNodes()
+        ui.notify('Save current nodes position', close_button='OK')
 
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):
