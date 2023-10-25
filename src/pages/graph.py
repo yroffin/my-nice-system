@@ -261,25 +261,16 @@ class GraphPage(StandardPage):
                     height.bind_value(self.data, target_name="height")
                     ui.button('Store', on_click=lambda: self.onStore())
 
-                ui.button('Store', on_click=lambda: self.dialog_parameters.open())
-                ui.button('Save', on_click=lambda: self.getNodes())
-                ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
-                ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
-                ui.button('Reload from server', on_click=lambda: self.refresh())
-
-                self.sw = {
-                    "enabled": False
-                }
-
-                self.grp = {
-                    "enabled": False
+                self.switch = {
+                    "link": False,
+                    "group": False
                 }
 
                 self.cytoscape = None
                 switch_sw = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
-                switch_sw.bind_value(self.sw, target_name="enabled")
+                switch_sw.bind_value(self.switch, target_name="link")
                 switch_grp = ui.switch('group mode', on_change=lambda: self.onSwithGroup())
-                switch_grp.bind_value(self.grp, target_name="enabled")
+                switch_grp.bind_value(self.switch, target_name="group")
 
                 self.myGraph = GraphService().graph(id = id)
 
@@ -290,17 +281,26 @@ class GraphPage(StandardPage):
                         graph = self.graph)
                     ui.timer(0.1, lambda: self.refresh(), once = True)
 
+                    with ui.context_menu():
+                        ui.menu_item('Parameter(s)', on_click=lambda: self.dialog_parameters.open())
+                        ui.separator()
+                        ui.menu_item('Search node(s)', on_click=lambda: self.dialog_search_node.open())
+                        ui.menu_item('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+                        ui.separator()
+                        ui.menu_item('Save', on_click=lambda: self.getNodes())
+                        ui.menu_item('Reload from server', on_click=lambda: self.refresh())
+
     def refresh(self):
         self.cytoscape.loadNodes(self.myGraph)
         self.cytoscape.loadStyle(self.myGraph)
 
     def onSwithLink(self):
         if self.cytoscape:
-            self.cytoscape.drawMode(self.sw['enabled'])
+            self.cytoscape.drawMode(self.switch['link'])
 
     def onSwithGroup(self):
         if self.cytoscape:
-            self.cytoscape.groupMode(self.grp['enabled'])
+            self.cytoscape.groupMode(self.switch['group'])
 
     def onStore(self):
         app.storage.user['graph_properties'] = self.data
