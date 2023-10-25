@@ -43,13 +43,13 @@ sample
 <node id="azure/aks/deployment/pod/service-p" label="service P" alias="" group="" x="1500" y="620" tag="azure/aks/deployment/pod">
 <![CDATA[TODO ...]]>
 </node>
-<node id="azure/redis/redis-a" label="redis A" alias="" group="" x="1620" y="100" tag="azure/redis">
+<node id="azure/redis/redis-a" label="redis A" alias="" group="redis" x="1620" y="100" tag="azure/redis">
 <![CDATA[TODO ...]]>
 </node>
-<node id="azure/redis/redis-a@219d7775-e919-4fd4-8f33-c91a363aba2f" label="redis A" alias="azure/redis/redis-a" group="" x="1900" y="620" tag="azure/redis">
+<node id="azure/redis/redis-a@219d7775-e919-4fd4-8f33-c91a363aba2f" label="redis B" alias="azure/redis/redis-a" group="redis" x="1900" y="620" tag="azure/redis">
 <![CDATA[TODO ...]]>
 </node>
-<node id="azure/redis/redis-a@5b300ec8-1241-4c21-aa25-5dc923572d15" label="redis A" alias="azure/redis/redis-a" group="" x="220" y="700" tag="azure/redis">
+<node id="azure/redis/redis-a@5b300ec8-1241-4c21-aa25-5dc923572d15" label="redis C" alias="azure/redis/redis-a" group="redis" x="220" y="700" tag="azure/redis">
 <![CDATA[TODO ...]]>
 </node>
 <node id="azure/service-bus/queue/bus-queue a@efab0f67-f4b5-4fcb-b1c3-0453632976bc" label="bus queue A" alias="azure/service-bus/queue/bus-queue a" group="" x="220" y="340" tag="azure/service-bus/queue">

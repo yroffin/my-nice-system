@@ -5,6 +5,7 @@ from utils.logger import LoggerService
 # Load pages
 from pages.main import MainPage
 from pages.graph import GraphPage
+from nicegui import app
 
 import logging
 

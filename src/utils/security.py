@@ -7,8 +7,7 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-import nicegui.globals
-from nicegui import app, ui
+from nicegui import app, ui, Client
 
 from utils.singleton import singleton
 
@@ -36,12 +35,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         authenticated = app.storage.user.get('identity', None)
         if not authenticated:
             logging.info('User is not authenticated')
-            if request.url.path in nicegui.globals.page_routes.values() and request.url.path not in unrestricted_page_routes:
+            if request.url.path in Client.page_routes.values() and request.url.path not in unrestricted_page_routes:
                 logging.info('Redirect to /login with referer {}'.format(request.url.path))
                 app.storage.user['referrer_path'] = request.url.path  # remember where the user wanted to go
                 return RedirectResponse('/login')
         else:
-            if request.url.path in nicegui.globals.page_routes.values() and request.url.path not in unrestricted_page_routes:
+            if request.url.path in Client.page_routes.values() and request.url.path not in unrestricted_page_routes:
                 logging.debug("[CONNECTED] Identity: {} => {}".format(app.storage.user.get('identity'), request.url))
         return await call_next(request)
 
@@ -74,6 +73,7 @@ class SecurityService(object):
     def startup(self):
         logging.info('Load middleware')
         app.add_middleware(AuthMiddleware)
+        app.add_static_files('/static', 'static')
         ui.run(title = 'Devops GUI', storage_secret=config['gui']['secret'])
 
     def initiateCodeFlow(self, request = None, scopes = None):

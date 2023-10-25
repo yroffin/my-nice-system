@@ -47,9 +47,15 @@ from bs4 import BeautifulSoup
 class GraphService(object): 
 
     def graphById(self, id = None):
+        """
+        Get graph by its id
+        """
         return Graph.get(Graph.id == id)
 
     def graphs(self):
+        """
+        Get all graphs
+        """
         result = []
         for graph in Graph.select():
             mygraph = {
@@ -61,6 +67,93 @@ class GraphService(object):
             }
             result.append(mygraph)
         return result
+
+    def dropNode(self, id):
+        """Return droppped node
+
+        Drop node ny its id (and its edges)
+        """
+        # Delete source edge
+        deleted = Edge.delete().where(Edge.source == id[1:]).execute()
+        logging.info("Drop {} source edge with id {}".format(deleted, id[1:]))
+        # Delete target edge
+        deleted = Edge.delete().where(Edge.target == id[1:]).execute()
+        logging.info("Drop {} target edge with id {}".format(deleted, id[1:]))
+        # Delete this node
+        deleted = Node.delete().where(Node.id == id[1:]).execute()
+        logging.info("Drop {} node with id {}".format(deleted, id[1:]))
+        return deleted
+
+    def dropEdge(self, id):
+        """Return droppped edge
+
+        Drop edge ny its id
+        """
+        # Delete edge
+        deleted = Edge.delete().where(Edge.id == id[1:]).execute()
+        logging.info("Drop {} edge with id {}".format(deleted, id[1:]))
+        return deleted
+
+    def updateNodePosition(self, id, x, y):
+        """Return nothing
+
+        Update node position
+        """
+        # Update position
+        node = Node.get(Node.id == id[1:])
+        node.x = x
+        node.y = y
+        node.save()
+
+    def addEdge(self, source = None, target = None):
+        # Add new edge
+        sourceNode = Node.get(Node.id == source[1:])
+        targetNode = Node.get(Node.id == target[1:])
+
+        # create a new edge
+        edge = Edge.create(label = "default", reference = "", source = sourceNode, target = targetNode, graph = sourceNode.graph)
+
+    def cloneNode(self, clone, id):
+        mygraph = Graph.get(Graph.id == id)
+
+        reference = None
+        if 'id' in clone:
+            reference = "{}".format(clone['id'])
+        label = None
+        if 'label' in clone['data']:
+            label = clone['data']['label']
+        alias = None
+        if 'alias' in clone['data']:
+            alias = clone['data']['alias']
+        group = None
+        if 'group' in clone['data']:
+            group = clone['data']['group']
+        x = None
+        if 'x' in clone['position']:
+            x = clone['position']['x'] + 50
+        y = None
+        if 'y' in clone['position']:
+            y = clone['position']['y'] + 50
+        tag = None
+        if 'tag' in clone['data']:
+            tag = clone['data']['tag']
+
+        # create a new node
+        node = Node.create(label = label, reference = reference, alias = alias,  group = group,  x = x,  y = y,  tag = tag, graph = mygraph)
+        return {
+            "id": "n{}".format(node.id),
+            "data": {
+                "reference": reference,
+                "label": label,
+                "alias": alias,
+                "group": group,
+                "tag": tag
+            },
+            "position":{
+                "x": x,
+                "y": y
+            }
+        }
 
     def dropGraph(self, id):
         # Delete all nodes for this graph
@@ -74,6 +167,25 @@ class GraphService(object):
 
     def createGraph(self, name = 'default'):
         Graph.create(name = name)
+
+    def getGroups(self, graph = None):
+        keys = {}
+        for node in Node.select().where(Node.graph == graph):
+            if len(node.group) > 0:
+                keys[node.group] =True
+        result = []
+        for key in keys:
+            result.append(key)
+        return result
+
+    def getTags(self, graph = None):
+        keys = {}
+        for node in Node.select().where(Node.graph == graph):
+            if node.tag not in keys:
+                keys[node.tag] = 0
+            if len(node.tag) > 0:
+                keys[node.tag] += 1
+        return keys
 
     def nodes(self, graph = None):
         result = []
@@ -98,19 +210,21 @@ class GraphService(object):
         return result
 
     def graph(self, id: str = None):
+        result = {
+                "id": id,
+                "nodes": [],
+                "edges": [],
+                "styles": []
+            }
         for graph in Graph.select().where(Graph.id == id):
-            result = {
-                    "id": graph.id,
-                    "name": graph.name,
-                    "nodes": [],
-                    "edges": [],
-                    "styles": []
-                }
+            result['name'] = graph.name
+
             for node in Node.select().where(Node.graph == id):
                 result['nodes'].append({
                     "id": "n{}".format(node.id),
                     "reference": node.reference,
                     "label": node.label,
+                    "group": node.group,
                     "tag": node.tag,
                     "x": node.x,
                     "y": node.y
@@ -171,7 +285,7 @@ class GraphService(object):
 
                 logging.info('graph {} loaded in {} ms with {} style(s)'.format(mygraph[0].name, (time.time() - start) * 1000, counter))
             else:
-                logging.warn('No graph with name {}'.format(name))
+                logging.warn('No graph with name {}'.format(id))
         else:
             logging.warn('Name is None')
 

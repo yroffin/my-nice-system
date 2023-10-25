@@ -3,7 +3,7 @@ from components.cytoscape.cytoscape import Cytoscape
 from models.graph import GraphService
 from pages.common import StandardPage
 
-from nicegui import app, events, ui
+from nicegui import Tailwind, app, events, ui
 from core.config import config
 import logging
 
@@ -160,19 +160,14 @@ class GraphPage(StandardPage):
         self.nodeColumns = [
             {'name': 'id', 'label': 'Id', 'field': 'id', 'sortable': True},
             {'name': 'label', 'label': 'Label', 'field': 'label', 'sortable': True},
+            {'name': 'action', 'label': 'Select'}
         ]
 
         self.edgeColumns = [
             {'name': 'id', 'label': 'Id', 'field': 'id', 'sortable': True},
             {'name': 'label', 'label': 'Label', 'field': 'label', 'sortable': True},
+            {'name': 'action', 'label': 'Select'}
         ]
-
-        self.data_node = {
-            "label": ""
-        }
-        self.data_edge = {
-            "label": ""
-        }
 
     @ui.refreshable
     def tableNode(self) -> None:
@@ -183,8 +178,27 @@ class GraphPage(StandardPage):
                 "label": node['label']
                 })
 
-        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single", on_select=lambda: self.select(table))
+        table = ui.table(columns=self.nodeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'})
         table.classes('w-full')
+
+        table.add_slot('body', r'''
+            <q-tr :props="props">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                    {{ col.value }}
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('selectNode', props.row)"
+                        :icon="'search'" />
+                </q-td>
+            </q-tr>
+        ''')
+
+        table.on('selectNode', self.selectNode)
+
+    def selectNode(self, e: events.GenericEventArguments) -> None:
+        self.dialog_search_node.close()
+        self.cytoscape.select(e.args['id'])
 
     @ui.refreshable
     def tableEdge(self) -> None:
@@ -195,12 +209,27 @@ class GraphPage(StandardPage):
                 "label": edge['label']
                 })
 
-        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'}, selection="single", on_select=lambda: self.select(table))
+        table = ui.table(columns=self.edgeColumns, rows=rows, row_key='id', pagination={'rowsPerPage': 4, 'sortBy': 'label'})
         table.classes('w-full')
 
-    async def select(self, table):
-        if len(table.selected) != 0:
-            self.cytoscape.select(table.selected[0]['id'])
+        table.add_slot('body', r'''
+            <q-tr :props="props">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                    {{ col.value }}
+                </q-td>
+                <q-td auto-width>
+                    <q-btn color="info" round dense
+                        @click="() => $parent.$emit('selectEdge', props.row)"
+                        :icon="'search'" />
+                </q-td>
+            </q-tr>
+        ''')
+
+        table.on('selectEdge', self.selectEdge)
+
+    def selectEdge(self, e: events.GenericEventArguments) -> None:
+        self.dialog_search_edge.close()
+        self.cytoscape.select(e.args['id'])
 
     def build(self, request, id):
         # Call inheritance to check roles
@@ -223,6 +252,42 @@ class GraphPage(StandardPage):
                     ui.label('Search')
                     self.tableEdge()
 
+                # select dialog statistics
+                self.dialog_statistics = ui.dialog()
+                with self.dialog_statistics, ui.card() as card:
+                    card.style('width: 1024px')
+                    card.style('max-width: 1024px')
+                    card.style('height: 300px')
+                    card.style('max-height: 300px')
+                    data = []
+                    tags = GraphService().getTags(self.graph)
+                    for key in tags:
+                        data.append({ "value": tags[key], "name": key })
+                    self.echart = ui.echart({
+                        "tooltip": {
+                            "trigger": 'item'
+                        },
+                        "legend": {
+                            "orient": 'vertical',
+                            "left": 'left'
+                        },
+                        "series": [
+                            {
+                            "name": 'Tag',
+                            "type": 'pie',
+                            "radius": '80%',
+                            "data": data,
+                            "emphasis": {
+                                    "itemStyle": {
+                                    "shadowBlur": 10,
+                                    "shadowOffsetX": 0,
+                                    "shadowColor": 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                }
+                            }
+                        ]
+                    })
+
                 # select dialog parameters
                 self.dialog_parameters = ui.dialog()
                 with self.dialog_parameters, ui.card():
@@ -232,43 +297,72 @@ class GraphPage(StandardPage):
                     height.bind_value(self.data, target_name="height")
                     ui.button('Store', on_click=lambda: self.onStore())
 
-                ui.button('Store', on_click=lambda: self.dialog_parameters.open())
-                ui.button('Search node(s)', on_click=lambda: self.dialog_search_node.open())
-                ui.button('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+                self.switch = {
+                    "link": False,
+                    "group": False
+                }
 
-                # select dialog node
-                self.dialog_node = ui.dialog()
-                with self.dialog_node, ui.card():
-                    ui.label('Node')
-                    label = ui.input(label='Label', placeholder='start typing',
-                        validation={'Input too long': lambda value: len(value) < 255})
-                    label.bind_value(self.data_node, target_name = 'label')
-                    ui.button('Close', on_click=self.dialog_node.close)
+                self.cytoscape = None
 
-                # select dialog node
-                self.dialog_edge = ui.dialog()
-                with self.dialog_edge as dialog, ui.card():
-                    ui.label('Edge')
-                    label = ui.input(label='Label', placeholder='start typing',
-                        validation={'Input too long': lambda value: len(value) < 255})
-                    label.bind_value(self.data_edge, target_name = 'label')
-                    ui.button('Close', on_click=dialog.close)
+                with ui.column():
+                    switch_sw = ui.switch('draw mode', on_change=lambda: self.onSwithLink())
+                    switch_sw.bind_value(self.switch, target_name="link")
+                    switch_grp = ui.switch('group mode', on_change=lambda: self.onSwithGroup())
+                    switch_grp.bind_value(self.switch, target_name="group")
 
                 self.myGraph = GraphService().graph(id = id)
 
-                with ui.card():
-                    self.cytoscape = Cytoscape('Graph', 
-                        model = self.myGraph, 
-                        width = self.data['width'],
-                        height = self.data['height'],
-                        on_click_node=self.dialog_node.open, 
-                        data_node = self.data_node,
-                        on_click_edge=self.dialog_edge.open, 
-                        data_edge = self.data_edge)
-    
+                with ui.column():
+                    with ui.card():
+                        self.cytoscape = Cytoscape('Graph', 
+                            width = self.data['width'],
+                            height = self.data['height'],
+                            graph = self.graph)
+                        ui.timer(0.1, lambda: self.refresh(), once = True)
+
+                        with ui.context_menu():
+                            ui.menu_item('Parameter(s)', on_click=lambda: self.dialog_parameters.open())
+                            ui.separator()
+                            ui.menu_item('Search node(s)', on_click=lambda: self.dialog_search_node.open())
+                            ui.menu_item('Search edge(s)', on_click=lambda: self.dialog_search_edge.open())
+                            ui.menu_item('Fit', on_click=lambda: self.fit())
+                            ui.separator()
+                            ui.menu_item('Save', on_click=lambda: self.getNodes())
+                            ui.menu_item('Reload from server', on_click=lambda: self.refresh())
+                            ui.separator()
+                            ui.menu_item('Statistics', on_click=lambda: self.dialog_statistics.open())
+
+    def fit(self):
+        if self.cytoscape:
+            self.cytoscape.fit()
+
+    def refresh(self):
+        self.cytoscape.loadStyle(self.myGraph)
+        self.cytoscape.loadNodes(self.myGraph)
+
+        from random import random
+        self.echart.options['series'][0]['data'][0] = random()
+        self.echart.update()
+        ui.notify('Reload graph from server', close_button='OK')
+
+    def onSwithLink(self):
+        if self.cytoscape:
+            self.cytoscape.drawMode(self.switch['link'])
+
+    def onSwithGroup(self):
+        if self.cytoscape:
+            self.cytoscape.groupMode(self.switch['group'])
+
     def onStore(self):
         app.storage.user['graph_properties'] = self.data
         self.dialog_parameters.close()
+
+    def onClone(self, data = None, graph = None):
+        self.cytoscape.cloneNode(data = data, graph = graph)
+
+    def getNodes(self):
+        self.cytoscape.getNodes()
+        ui.notify('Save current nodes position', close_button='OK')
 
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):
