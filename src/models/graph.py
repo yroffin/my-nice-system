@@ -24,22 +24,21 @@ class Node(BaseModel):
     y = IntegerField(null=True)
     tag = TextField(null=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
-    graph = ForeignKeyField(Graph, backref='graphs')
+    graph = ForeignKeyField(Graph)
 
 class Edge(BaseModel):
     label = TextField()
-    reference = TextField()
-    source = ForeignKeyField(Node, backref='node')
-    target = ForeignKeyField(Node, backref='node')
+    source = ForeignKeyField(Node)
+    target = ForeignKeyField(Node)
     tag = TextField(null=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
-    graph = ForeignKeyField(Graph, backref='graphs')
+    graph = ForeignKeyField(Graph)
 
 class Style(BaseModel):
     label = TextField(null=True)
     selector = TextField(null=True)
     style = TextField()
-    graph = ForeignKeyField(Graph, backref='graphs')
+    graph = ForeignKeyField(Graph, backref='graph')
 
 from bs4 import BeautifulSoup
 
@@ -117,26 +116,26 @@ class GraphService(object):
         mygraph = Graph.get(Graph.id == id)
 
         reference = None
-        if 'id' in clone:
-            reference = "{}".format(clone['id'])
+        if 'reference' in clone:
+            reference = "{}".format(clone['reference'])
         label = None
-        if 'label' in clone['data']:
-            label = clone['data']['label']
+        if 'label' in clone:
+            label = clone['label']
         alias = None
-        if 'alias' in clone['data']:
-            alias = clone['data']['alias']
+        if 'alias' in clone:
+            alias = clone['alias']
         group = None
-        if 'group' in clone['data']:
-            group = clone['data']['group']
+        if 'group' in clone:
+            group = clone['group']
         x = None
-        if 'x' in clone['position']:
-            x = clone['position']['x'] + 50
+        if 'x' in clone:
+            x = clone['x'] + 50
         y = None
-        if 'y' in clone['position']:
-            y = clone['position']['y'] + 50
+        if 'y' in clone:
+            y = clone['y'] + 50
         tag = None
-        if 'tag' in clone['data']:
-            tag = clone['data']['tag']
+        if 'tag' in clone:
+            tag = clone['tag']
 
         # create a new node
         node = Node.create(label = label, reference = reference, alias = alias,  group = group,  x = x,  y = y,  tag = tag, graph = mygraph)
@@ -167,6 +166,16 @@ class GraphService(object):
 
     def createGraph(self, name = 'default'):
         Graph.create(name = name)
+
+    def updateNode(self, id = None, data = None):
+        # Update position
+        node = Node.get(Node.id == id[1:])
+        node.label = data['label']
+        node.reference = data['reference']
+        node.alias = data['alias']
+        node.group = data['group']
+        node.tag = data['tag']
+        node.save()
 
     def getGroups(self, graph = None):
         keys = {}
@@ -232,7 +241,7 @@ class GraphService(object):
             for edge in Edge.select().where(Edge.graph == id):
                 result['edges'].append({
                     "id": "e{}".format(edge.id),
-                    "reference": edge.reference,
+                    "reference": "{}:{}".format(edge.source.reference,edge.target.reference),
                     "label": edge.label,
                     "tag": edge.tag,
                     "source": "n{}".format(edge.source.id),

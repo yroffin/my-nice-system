@@ -340,8 +340,6 @@ class GraphPage(StandardPage):
         self.cytoscape.loadStyle(self.myGraph)
         self.cytoscape.loadNodes(self.myGraph)
 
-        from random import random
-        self.echart.options['series'][0]['data'][0] = random()
         self.echart.update()
         ui.notify('Reload graph from server', close_button='OK')
 
