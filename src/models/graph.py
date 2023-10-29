@@ -234,6 +234,16 @@ class GraphService(object):
             index[value] = 1
         return index[value]
 
+    def getAlias(self, id: str = None):
+        node = Node.get(Node.id == id[1:])
+        alias = None
+        if node.alias:
+            alias = node.alias.reference
+            nodeAlias = Node.get(Node.reference == alias)
+            return "n{}".format(nodeAlias.id)
+        else:
+            return None
+
     def graph(self, id: str = None):
         result = {
                 "id": id,

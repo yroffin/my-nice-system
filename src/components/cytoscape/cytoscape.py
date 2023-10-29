@@ -78,6 +78,7 @@ class Cytoscape(Element, component='cytoscape.js'):
             
             ui.separator()
 
+            ui.button('Alias', on_click=lambda: self.findAlias(self.data_node_id))
             ui.button('Drop', on_click=lambda: self.dropNode(self.data_node_id))
             ui.button('Clone', on_click=lambda: self.cloneNode(
               {
@@ -192,6 +193,10 @@ class Cytoscape(Element, component='cytoscape.js'):
        Select a single node onto current raph
        """
        self.run_method('select', data)
+
+    def findAlias(self, id):
+      selected = GraphService().getAlias(id)
+      self.select(selected)
 
     def dropNode(self, id):
       GraphService().dropNode(id)
