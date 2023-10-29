@@ -322,6 +322,15 @@ export default {
     fit() {
       let cy = this.container
       cy.fit()
+    },
+    png() {
+      let cy = this.container
+      return cy.png({
+        bg: 'white',
+        full: this.preferences.full,
+        maxWidth: this.preferences.maxWidth ? Number(this.preferences.maxWidth) : 1024,
+        maxHeight: this.preferences.maxHeight ? Number(this.preferences.maxHeight) : 768
+      }) || ""
     }
   },
   template: `
@@ -332,6 +341,11 @@ export default {
   `,
   data() {
     return {
+      preferences: {
+        full: false,
+        maxWidth: 1024,
+        maxHeight: 768
+      }
     }
   },
   props: {

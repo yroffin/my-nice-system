@@ -204,15 +204,19 @@ class Cytoscape(Element, component='cytoscape.js'):
       self.dialog_edge.close()
 
     def cloneNode(self, data, graph):
-       cloned = GraphService().cloneNode(clone = data, id = graph)
-       self.run_method('cloneNode', cloned)
-       self.dialog_node.close()
+      cloned = GraphService().cloneNode(clone = data, id = graph)
+      self.run_method('cloneNode', cloned)
+      self.dialog_node.close()
 
     def getNodes(self):
-       self.run_method('updateNodePosition')
+      self.run_method('updateNodePosition')
 
     def fit(self):
-       self.run_method('fit')
+      self.run_method('fit')
+
+    async def png(self):
+      png = await self.run_method('png')
+      GraphService().updatePngToGraphById(self.graph, png)
 
     def updateNodePosition(self, event):
        for node in event.args:

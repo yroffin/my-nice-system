@@ -14,6 +14,7 @@ class BaseModel(Model):
 
 class Graph(BaseModel):
     name = TextField()
+    png = BlobField(null=True)
 
 class Node(BaseModel):
     label = TextField()
@@ -50,6 +51,14 @@ class GraphService(object):
         Get graph by its id
         """
         return Graph.get(Graph.id == id)
+
+    def updatePngToGraphById(self, id = None, png = None):
+        """
+        Get graph by its id
+        """
+        graph = Graph.get(Graph.id == id)
+        graph.png = png
+        graph.save()
 
     def graphs(self):
         """
