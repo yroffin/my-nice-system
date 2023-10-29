@@ -1,4 +1,7 @@
+import base64
+import io
 from fastapi import Request
+from fastapi.responses import StreamingResponse
 from components.cytoscape.cytoscape import Cytoscape
 from models.graph import GraphService
 from pages.common import StandardPage
@@ -297,6 +300,11 @@ class GraphPage(StandardPage):
                     height.bind_value(self.data, target_name="height")
                     ui.button('Store', on_click=lambda: self.onStore())
 
+                # select dialog parameters
+                self.dialog_png = ui.dialog()
+                with self.dialog_png, ui.card():
+                    ui.html('<img src="/graph/{}/png">'.format(self.graph))
+
                 self.switch = {
                     "link": False,
                     "group": False
@@ -329,6 +337,7 @@ class GraphPage(StandardPage):
                             ui.separator()
                             ui.menu_item('Save', on_click=lambda: self.getNodes())
                             ui.menu_item('Reload from server', on_click=lambda: self.refresh())
+                            ui.menu_item('Attach PNG to this graph', on_click=lambda: self.png())
                             ui.separator()
                             ui.menu_item('Statistics', on_click=lambda: self.dialog_statistics.open())
 
@@ -340,8 +349,6 @@ class GraphPage(StandardPage):
         self.cytoscape.loadStyle(self.myGraph)
         self.cytoscape.loadNodes(self.myGraph)
 
-        from random import random
-        self.echart.options['series'][0]['data'][0] = random()
         self.echart.update()
         ui.notify('Reload graph from server', close_button='OK')
 
@@ -364,6 +371,20 @@ class GraphPage(StandardPage):
         self.cytoscape.getNodes()
         ui.notify('Save current nodes position', close_button='OK')
 
+    async def png(self):
+        await self.cytoscape.png()
+        ui.notify('Attach PNG to this graph', close_button='OK')
+        self.dialog_png.open()
+
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):
     GraphPage().build(request = request, id = id)
+
+@app.get('/graph/{id}/png')
+def pngGraph(request: Request = None, id: str = None):
+    # exclude data:image/png;base64,
+    b64 = str(GraphService().graphById(id).png)[24:]
+    imgio = io.BytesIO()
+    imgio.write(base64.b64decode(b64))
+    imgio.seek(0)
+    return StreamingResponse(content=imgio, media_type="image/png")

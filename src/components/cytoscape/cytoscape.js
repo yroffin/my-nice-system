@@ -151,6 +151,7 @@ export default {
             data: {
               id: node.id,
               label: node.label,
+              reference: node.reference,
               cdata: node.cdata,
               alias: node.alias,
               group: node.group,
@@ -171,6 +172,7 @@ export default {
             data: {
               id: edge.id,
               label: edge.label,
+              reference: edge.reference,
               source: edge.source,
               target: edge.target,
               _source: edge._source,
@@ -265,18 +267,18 @@ export default {
    * drop node
    * @param {*} data 
    */
-    dropNode(data) {
-      this.container.$(`#${data.id}`).remove()
+    dropNode(id) {
+      this.container.$(`#${id}`).remove()
     },
-    dropEdge(data) {
-      console.log(data)
-      this.container.$(`#${data.id}`).remove()
+    dropEdge(id) {
+      this.container.$(`#${id}`).remove()
     },
     cloneNode(data) {
       let cloned = {
         data: {
           id: data.id,
           label: data.data?.label,
+          reference: data.data?.reference,
           alias: data.data?.alias,
           cdata: data.data?.cdata,
           group: data.data?.group,
@@ -320,6 +322,15 @@ export default {
     fit() {
       let cy = this.container
       cy.fit()
+    },
+    png() {
+      let cy = this.container
+      return cy.png({
+        bg: 'white',
+        full: this.preferences.full,
+        maxWidth: this.preferences.maxWidth ? Number(this.preferences.maxWidth) : 1024,
+        maxHeight: this.preferences.maxHeight ? Number(this.preferences.maxHeight) : 768
+      }) || ""
     }
   },
   template: `
@@ -330,6 +341,11 @@ export default {
   `,
   data() {
     return {
+      preferences: {
+        full: false,
+        maxWidth: 1024,
+        maxHeight: 768
+      }
     }
   },
   props: {
