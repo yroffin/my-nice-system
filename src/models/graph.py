@@ -19,7 +19,7 @@ class Graph(BaseModel):
 class Node(BaseModel):
     label = TextField()
     reference = TextField()
-    alias = TextField(null=True)
+    alias = ForeignKeyField('self', null=True, backref='node')
     group = TextField(null=True)
     x = IntegerField(null=True)
     y = IntegerField(null=True)
@@ -245,9 +245,13 @@ class GraphService(object):
             result['name'] = graph.name
 
             for node in Node.select().where(Node.graph == id):
+                alias = None
+                if node.alias:
+                    alias = node.alias.reference
                 result['nodes'].append({
                     "id": "n{}".format(node.id),
                     "reference": node.reference,
+                    "alias": alias,
                     "label": node.label,
                     "group": node.group,
                     "tag": node.tag,
@@ -342,8 +346,12 @@ class GraphService(object):
         # Delete all edges for this graph
         Edge.delete().where(Edge.graph.__eq__(id)).execute()
 
-        # find all nodes
+        # find all not alias nodes
+        nodeCounter = 1
         for node in Bs_data.find_all('node'):
+
+            if 'alias' in node.attrs and len(node.attrs['alias']) > 0:
+                continue
 
             reference = None
             if 'id' in node.attrs:
@@ -351,9 +359,44 @@ class GraphService(object):
             label = None
             if 'label' in node.attrs:
                 label = node.attrs['label']
-            alias = None
+            group = None
+            if 'group' in node.attrs:
+                group = node.attrs['group']
+            x = None
+            if 'x' in node.attrs:
+                x = node.attrs['x']
+            y = None
+            if 'y' in node.attrs:
+                y = node.attrs['y']
+            tag = None
+            if 'tag' in node.attrs:
+                tag = node.attrs['tag']
+            
+            # create a new node
+            node = Node.create(label = label, reference= reference, alias = None,  group = group,  x = x,  y = y,  tag = tag, graph = mygraph)
+            nodeCounter += 1
+        logging.info("Load {} not alias nodes".format(nodeCounter))
+
+        # find all alias nodes
+        nodeCounter = 1
+        for node in Bs_data.find_all('node'):
+
+            if 'alias' not in node.attrs or len(node.attrs['alias']) == 0:
+                continue
+            print(len(node.attrs['alias']) == 0)
+
             if 'alias' in node.attrs:
-                alias = node.attrs['alias']
+                aliasReference = node.attrs['alias']
+                # find this node by its reference
+                logging.info("Load alias nodes: {}".format(aliasReference))
+                alias = Node.get(Node.reference == aliasReference)
+
+            reference = None
+            if 'id' in node.attrs:
+                reference = "{}".format(node.attrs['id'])
+            label = None
+            if 'label' in node.attrs:
+                label = node.attrs['label']
             group = None
             if 'group' in node.attrs:
                 group = node.attrs['group']
@@ -369,6 +412,8 @@ class GraphService(object):
             
             # create a new node
             node = Node.create(label = label, reference= reference, alias = alias,  group = group,  x = x,  y = y,  tag = tag, graph = mygraph)
+            nodeCounter += 1
+        logging.info("Load {} alias nodes".format(nodeCounter))
 
         # find all edges
         for edge in Bs_data.find_all('edge'):
