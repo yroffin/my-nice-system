@@ -218,6 +218,13 @@ class GraphService(object):
             )
         return result
 
+    def _computeIndex(self, index: {} = None, value = None):
+        if value in index:
+            index[value] += 1
+        else:
+            index[value] = 1
+        return index[value]
+
     def graph(self, id: str = None):
         result = {
                 "id": id,
@@ -238,10 +245,11 @@ class GraphService(object):
                     "x": node.x,
                     "y": node.y
                 })
+            index = {}
             for edge in Edge.select().where(Edge.graph == id):
                 result['edges'].append({
                     "id": "e{}".format(edge.id),
-                    "reference": "{}:{}".format(edge.source.reference,edge.target.reference),
+                    "reference": "{}:{}@{}".format(edge.source.reference,edge.target.reference, self._computeIndex(index, "{}:{}".format(edge.source.reference,edge.target.reference))),
                     "label": edge.label,
                     "tag": edge.tag,
                     "source": "n{}".format(edge.source.id),
