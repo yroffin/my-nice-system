@@ -34,9 +34,7 @@ sample
 <node id="azure/aks/deployment/pod/service-e" label="service E" alias="" group="" x="1620" y="300" tag="azure/aks/deployment/pod">
 <![CDATA[TODO ...]]>
 </node>
-<node id="azure/aks/deployment/pod/service-e-1" label="service E.1" alias="" group="" x="1900" y="460" tag="azure/aks/deployment/pod">
-<![CDATA[TODO ...]]>
-</node>
+<node id="azure/aks/deployment/pod/service-e-1" label="service E.1" alias="" group="" x="1900" y="460" tag="azure/aks/deployment/pod" />
 <node id="azure/aks/deployment/pod/service-o" label="service O" alias="" group="" x="900" y="780" tag="azure/aks/deployment/pod">
 <![CDATA[TODO ...]]>
 </node>
