@@ -15,6 +15,7 @@ class BaseModel(Model):
 class Graph(BaseModel):
     name = TextField()
     png = BlobField(null=True)
+    gexf = BlobField(null=True)
 
 class Node(BaseModel):
     label = TextField()
@@ -24,6 +25,7 @@ class Node(BaseModel):
     x = IntegerField(null=True)
     y = IntegerField(null=True)
     tag = TextField(null=True)
+    cdata = TextField(null=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
     graph = ForeignKeyField(Graph)
 
@@ -32,6 +34,7 @@ class Edge(BaseModel):
     source = ForeignKeyField(Node)
     target = ForeignKeyField(Node)
     tag = TextField(null=True)
+    cdata = TextField(null=True)
     timestamp = DateTimeField(default=datetime.datetime.now)
     graph = ForeignKeyField(Graph)
 
@@ -54,11 +57,19 @@ class GraphService(object):
 
     def updatePngToGraphById(self, id = None, png = None):
         """
-        Get graph by its id
+        Update PNG part of graph by its id
         """
         graph = Graph.get(Graph.id == id)
         graph.png = png
         graph.save()
+
+    def updateGexfToGraphById(self, id = None):
+        """
+        Update GEXF part of graph by its id
+        """
+        graph = Graph.get(Graph.id == id)
+        graph.gexf = self.toGexf(id = id)
+        graph.save()        
 
     def graphs(self):
         """
@@ -244,6 +255,56 @@ class GraphService(object):
         else:
             return None
 
+    def toGexf(self, id: str = None):
+        result = []
+        for graph in Graph.select().where(Graph.id == id):
+
+            result.append(f"""
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://gexf.net/1.2" version="1.2">
+<meta lastmodifieddate="2009-03-20">
+<creator>Gexf.net</creator>
+<description>A hello world! file</description>
+</meta>
+<graph mode="static" defaultedgetype="directed" style="styles.json" rules="rules.json">""")
+
+            result.append(f"<nodes>")
+
+            for node in Node.select().where(Node.graph == id):
+                alias = ""
+                if node.alias:
+                    alias = node.alias.reference
+
+                if node.cdata:
+                    result.append(f"""<node id="{node.reference}" label="{node.label}" alias="{alias}" group="{node.group}" x="{node.x}" y="{node.y}" tag="{node.tag}">
+    <![CDATA[{node.cdata}]]>
+    </node>""")
+                else:
+                    result.append(f"""<node id="{node.reference}" label="{node.label}" alias="{alias}" group="{node.group}" x="{node.x}" y="{node.y}" tag="{node.tag}" />""")
+
+            result.append(f"</nodes>")
+
+            index = {}
+            result.append(f"<edges>")
+            for edge in Edge.select().where(Edge.graph == id):
+                tag = ""
+                if edge.tag:
+                    tag = edge.tag
+
+                reference = "{}:{}@{}".format(edge.source.reference,edge.target.reference, self._computeIndex(index, "{}:{}".format(edge.source.reference,edge.target.reference)))
+                if edge.cdata:
+                    result.append(f"""<edge id="{reference}" source="{edge.source.reference}" target="{edge.target.reference}" label="{edge.label}" tag="{tag}">
+    <![CDATA[{edge.cdata}]]>
+    </edge>""")
+                else:
+                    result.append(f"""<edge id="{reference}" source="{edge.source.reference}" target="{edge.target.reference}" label="{edge.label}" tag="{tag}" />""")
+
+            result.append(f"</edges>")
+        result.append(f"</graph>")
+        result.append(f"</gexf>")
+
+        return "\n".join(result)
+
     def graph(self, id: str = None):
         result = {
                 "id": id,
@@ -263,6 +324,7 @@ class GraphService(object):
                     "reference": node.reference,
                     "alias": alias,
                     "label": node.label,
+                    "cdata": node.cdata,
                     "group": node.group,
                     "tag": node.tag,
                     "x": node.x,
@@ -274,6 +336,7 @@ class GraphService(object):
                     "id": "e{}".format(edge.id),
                     "reference": "{}:{}@{}".format(edge.source.reference,edge.target.reference, self._computeIndex(index, "{}:{}".format(edge.source.reference,edge.target.reference))),
                     "label": edge.label,
+                    "cdata": edge.cdata,
                     "tag": edge.tag,
                     "source": "n{}".format(edge.source.id),
                     "target": "n{}".format(edge.target.id),
@@ -381,9 +444,12 @@ class GraphService(object):
             tag = None
             if 'tag' in node.attrs:
                 tag = node.attrs['tag']
+            contents = None
+            if node.contents and node.contents[0]:
+                contents = node.contents[0]
             
             # create a new node
-            node = Node.create(label = label, reference= reference, alias = None,  group = group,  x = x,  y = y,  tag = tag, graph = mygraph)
+            node = Node.create(label = label, reference= reference, alias = None,  group = group,  x = x,  y = y,  tag = tag, cdata = contents, graph = mygraph)
             nodeCounter += 1
         logging.info("Load {} not alias nodes".format(nodeCounter))
 
@@ -393,7 +459,6 @@ class GraphService(object):
 
             if 'alias' not in node.attrs or len(node.attrs['alias']) == 0:
                 continue
-            print(len(node.attrs['alias']) == 0)
 
             if 'alias' in node.attrs:
                 aliasReference = node.attrs['alias']
@@ -419,9 +484,12 @@ class GraphService(object):
             tag = None
             if 'tag' in node.attrs:
                 tag = node.attrs['tag']
+            contents = None
+            if node.contents and node.contents[0]:
+                contents = node.contents[0]
             
             # create a new node
-            node = Node.create(label = label, reference= reference, alias = alias,  group = group,  x = x,  y = y,  tag = tag, graph = mygraph)
+            node = Node.create(label = label, reference= reference, alias = alias,  group = group,  x = x,  y = y,  tag = tag, cdata = contents, graph = mygraph)
             nodeCounter += 1
         logging.info("Load {} alias nodes".format(nodeCounter))
 
@@ -445,13 +513,16 @@ class GraphService(object):
             target = None
             if 'target' in edge.attrs:
                 target = edge.attrs['target']
+            contents = None
+            if edge.contents and edge.contents[0]:
+                contents = edge.contents[0]
             
             # find source and target node
             sourceNode= Node.select().where(Node.graph == id).where(Node.reference == source)
             targetNode= Node.select().where(Node.graph == id).where(Node.reference == target)
 
             # create a new edge
-            edge = Edge.create(label = label, reference = reference, source = sourceNode, target = targetNode, tag = tag, graph = mygraph)
+            edge = Edge.create(label = label, reference = reference, source = sourceNode, target = targetNode, tag = tag, cdata = contents, graph = mygraph)
 
         # some statistics      
         nodeCount = len(Node.select().where(Node.graph.__eq__(mygraph.id)))

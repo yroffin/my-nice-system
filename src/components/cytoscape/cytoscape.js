@@ -173,6 +173,7 @@ export default {
               id: edge.id,
               label: edge.label,
               reference: edge.reference,
+              cdata: edge.cdata,
               source: edge.source,
               target: edge.target,
               _source: edge._source,

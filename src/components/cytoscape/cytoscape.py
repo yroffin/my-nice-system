@@ -52,15 +52,39 @@ class Cytoscape(Element, component='cytoscape.js'):
             "reference": "",
             "alias": "",
             "group": "",
-            "tag": ""
+            "tag": "",
+            "cdata": ""
         }
         self.data_node_id = None
 
         self.data_edge = {
             "label": "",
             "reference": "",
+            "cdata": ""
         }
         self.data_edge_id = None
+
+        # doc dialog node
+        self.dialog_doc_node = ui.dialog()
+        with self.dialog_doc_node, ui.card() as card:
+            card.style('width: 45%')
+            card.style('max-width: 45%')
+            card.style('height: 85%')
+            card.style('max-height: 85%')
+
+            self.md_node = ui.markdown()
+            self.md_node.bind_content(self.data_node, target_name = 'cdata')
+
+        # doc dialog node
+        self.dialog_doc_edge = ui.dialog()
+        with self.dialog_doc_edge, ui.card() as card:
+            card.style('width: 45%')
+            card.style('max-width: 45%')
+            card.style('height: 85%')
+            card.style('max-height: 85%')
+
+            self.md_edge = ui.markdown()
+            self.md_edge.bind_content(self.data_edge, target_name = 'cdata')
 
         # select dialog node
         self.dialog_node = ui.dialog()
@@ -79,6 +103,7 @@ class Cytoscape(Element, component='cytoscape.js'):
             ui.separator()
 
             ui.button('Alias', on_click=lambda: self.findAlias(self.data_node_id))
+            ui.button('Doc', on_click=lambda: self.markdown_node())
             ui.button('Drop', on_click=lambda: self.dropNode(self.data_node_id))
             ui.button('Clone', on_click=lambda: self.cloneNode(
               {
@@ -102,6 +127,7 @@ class Cytoscape(Element, component='cytoscape.js'):
               label = ui.input(label=field, placeholder='start typing value for {}'.format(field)).style('width: 100%')
               label.bind_value(self.data_edge, target_name = field)
 
+            ui.button('Doc', on_click=lambda: self.markdown_edge())
             ui.button('Drop', on_click=lambda: self.dropEdge(self.data_edge_id))
 
     def handle_event(self, event):
@@ -112,6 +138,8 @@ class Cytoscape(Element, component='cytoscape.js'):
         for field in ['label','reference','alias','group','tag']:
           if field in event.args['target']['data']:
             self.data_node[field] = event.args['target']['data'][field]
+        if 'cdata' in event.args['target']['data']:
+          self.data_node['cdata'] = event.args['target']['data']['cdata']
         for field in ['x','y']:
           if field in event.args['target']['position']:
             self.data_node[field] = event.args['target']['position'][field]
@@ -122,6 +150,8 @@ class Cytoscape(Element, component='cytoscape.js'):
         for field in ['label','reference']:
           if field in event.args['target']['data']:
             self.data_edge[field] = event.args['target']['data'][field]
+        if 'cdata' in event.args['target']['data']:
+          self.data_edge['cdata'] = event.args['target']['data']['cdata']
 
         self.data_edge_id = event.args['target']['id']
         self.dialog_edge.open()
@@ -198,6 +228,14 @@ class Cytoscape(Element, component='cytoscape.js'):
       selected = GraphService().getAlias(id)
       self.select(selected)
 
+    def markdown_node(self):
+      self.md_node.update()
+      self.dialog_doc_node.open()
+
+    def markdown_edge(self):
+      self.md_edge.update()
+      self.dialog_doc_edge.open()
+
     def dropNode(self, id):
       GraphService().dropNode(id)
       self.run_method('dropNode', id)
@@ -222,6 +260,9 @@ class Cytoscape(Element, component='cytoscape.js'):
     async def png(self):
       png = await self.run_method('png')
       GraphService().updatePngToGraphById(self.graph, png)
+
+    async def gexf(self):
+      GraphService().updateGexfToGraphById(id = self.graph)
 
     def updateNodePosition(self, event):
        for node in event.args:

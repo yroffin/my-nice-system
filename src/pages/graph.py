@@ -338,6 +338,7 @@ class GraphPage(StandardPage):
                             ui.menu_item('Save', on_click=lambda: self.getNodes())
                             ui.menu_item('Reload from server', on_click=lambda: self.refresh())
                             ui.menu_item('Attach PNG to this graph', on_click=lambda: self.png())
+                            ui.menu_item('Attach GEXF to this graph', on_click=lambda: self.gexf())
                             ui.separator()
                             ui.menu_item('Statistics', on_click=lambda: self.dialog_statistics.open())
 
@@ -376,6 +377,10 @@ class GraphPage(StandardPage):
         ui.notify('Attach PNG to this graph', close_button='OK')
         self.dialog_png.open()
 
+    async def gexf(self):
+        await self.cytoscape.gexf()
+        ui.notify('Attach GEXF to this graph', close_button='OK')
+
 @ui.page('/graph/{id}')
 def graphPage(request: Request = None, id: str = None):
     GraphPage().build(request = request, id = id)
@@ -388,3 +393,11 @@ def pngGraph(request: Request = None, id: str = None):
     imgio.write(base64.b64decode(b64))
     imgio.seek(0)
     return StreamingResponse(content=imgio, media_type="image/png")
+
+@app.get('/graph/{id}/gexf')
+def gexfGraph(request: Request = None, id: str = None):
+    b64 = GraphService().graphById(id).gexf[1:]
+    imgio = io.BytesIO()
+    imgio.write(b64)
+    imgio.seek(0)
+    return StreamingResponse(content=imgio, media_type="text/xml")

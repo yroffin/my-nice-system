@@ -107,7 +107,12 @@ sample
 <edge id="azure/aks/deployment/pod/service-e-1:azure/redis/redis-a@219d7775-e919-4fd4-8f33-c91a363aba2f" source="azure/aks/deployment/pod/service-e-1" target="azure/redis/redis-a@219d7775-e919-4fd4-8f33-c91a363aba2f" label="" />
 <edge id="azure/aks/deployment/pod/service-e-1:azure/service-bus/topic/subscription/subscription-a-2" source="azure/aks/deployment/pod/service-e-1" target="azure/service-bus/topic/subscription/subscription-a-2" label="" tag="" />
 <edge id="azure/aks/deployment/pod/service-e-1:azure/sqlserver/database-a" source="azure/aks/deployment/pod/service-e-1" target="azure/sqlserver/database-a" label="" tag="" />
-<edge id="azure/aks/deployment/pod/service-e:azure/redis/redis-a" source="azure/aks/deployment/pod/service-e" target="azure/redis/redis-a" label="" tag="" />
+<edge id="azure/aks/deployment/pod/service-e:azure/redis/redis-a" source="azure/aks/deployment/pod/service-e" target="azure/redis/redis-a" label="sample" tag="" >
+<![CDATA[## Service bus queue
+
+sample
+]]>
+</edge>
 <edge id="azure/aks/deployment/pod/service-e:azure/sqlserver/database-a" source="azure/aks/deployment/pod/service-e" target="azure/sqlserver/database-a" label="" tag="" />
 <edge id="azure/aks/deployment/pod/service-o:listener/service-a-port-8080@copie" source="azure/aks/deployment/pod/service-o" target="listener/service-a-port-8080@copie" label="ClientID: 0000-0000-0000-0000-0000" tag="" />
 <edge id="azure/aks/deployment/pod/service-p:listener/service-b-port-8080@copie" source="azure/aks/deployment/pod/service-p" target="listener/service-b-port-8080@copie" label="ClientID: 0000-0000-0000-0000-0000" tag="" />
