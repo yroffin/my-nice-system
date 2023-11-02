@@ -7,11 +7,13 @@
 <graph mode="static" defaultedgetype="directed" style="styles.json" rules="rules.json">
 <nodes>
 <node id="azure/aks/deployment/pod/service-a" label="service A" alias="" group="" x="700" y="380" tag="azure/aks/deployment/pod">
-<![CDATA[
+<![CDATA[2
+
 TODO ...
 TARGET
+TARGET
 
-]]>
+1]]>
 </node>
 <node id="azure/aks/deployment/pod/service-b" label="service B" alias="" group="" x="1060" y="300" tag="azure/aks/deployment/pod">
 <![CDATA[
@@ -20,6 +22,7 @@ TODO ...
 </node>
 <node id="azure/aks/deployment/pod/service-c" label="service C" alias="azure/aks/deployment/pod/service-a" group="sample" x="220" y="180" tag="azure/aks/deployment/pod">
 <![CDATA[
+
 TODO ...
 sdffdsfsdf
 
@@ -33,6 +36,7 @@ sample
 
 # Titre 2
 sample
+
 
 ]]>
 </node>
@@ -60,17 +64,23 @@ TODO ...
 </node>
 <node id="azure/redis/redis-a@219d7775-e919-4fd4-8f33-c91a363aba2f" label="redis B" alias="azure/redis/redis-a" group="redis" x="1900" y="620" tag="azure/redis">
 <![CDATA[
+
 TODO ...
+
 ]]>
 </node>
 <node id="azure/redis/redis-a@5b300ec8-1241-4c21-aa25-5dc923572d15" label="redis C" alias="azure/redis/redis-a" group="redis" x="220" y="700" tag="azure/redis">
 <![CDATA[
+
 TODO ...
+
 ]]>
 </node>
 <node id="azure/service-bus/queue/bus-queue a@efab0f67-f4b5-4fcb-b1c3-0453632976bc" label="bus queue A" alias="azure/service-bus/queue/bus-queue-a" group="" x="220" y="340" tag="azure/service-bus/queue">
 <![CDATA[
+
 TODO ...
+
 ]]>
 </node>
 <node id="azure/service-bus/queue/bus-queue-a" label="bus queue A" alias="" group="" x="1340" y="300" tag="azure/service-bus/queue">
@@ -109,12 +119,16 @@ Simple webapp
 </node>
 <node id="azure/webapp/webapp@6c7067a9-a3fd-4923-908f-c9d65bdbdeb6" label="webapp" alias="azure/webapp/webapp" group="" x="1620" y="-100" tag="azure/webapp">
 <![CDATA[
+
 TODO ...
+
 ]]>
 </node>
 <node id="listener/service-a-port-8080@copie" label="service A (port 8080)" alias="listener/service-a-port-8080@reference" group="" x="900" y="1020" tag="listener">
 <![CDATA[
+
 TODO ...
+
 ]]>
 </node>
 <node id="listener/service-a-port-8080@reference" label="service A (port 8080)" alias="" group="" x="700" y="180" tag="listener">
@@ -124,7 +138,9 @@ TODO ...
 </node>
 <node id="listener/service-b-port-8080@copie" label="service B (port 8080)" alias="listener/service-b-port-8080@reference" group="" x="1500" y="820" tag="listener">
 <![CDATA[
+
 TODO ...
+
 ]]>
 </node>
 <node id="listener/service-b-port-8080@reference" label="service B (port 8080)" alias="" group="" x="1060" y="100" tag="listener">
@@ -151,6 +167,7 @@ TODO ...
 ## Service bus queue
 
 sample
+
 
 ]]>
 </edge>

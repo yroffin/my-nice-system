@@ -465,7 +465,8 @@ class GraphService(object):
                 tag = node.attrs['tag']
             contents = None
             if node.contents and node.contents[0]:
-                contents = node.contents[0]
+                contents = str(node.contents[0])
+                contents = contents[1:(len(contents)-1)]
             
             # create a new node
             node = Node.create(label = label, reference= reference, alias = None,  group = group,  x = x,  y = y,  tag = tag, cdata = contents, graph = mygraph)
@@ -505,7 +506,8 @@ class GraphService(object):
                 tag = node.attrs['tag']
             contents = None
             if node.contents and node.contents[0]:
-                contents = node.contents[0]
+                contents = str(node.contents[0])
+                contents = contents[1:(len(contents)-1)]
             
             # create a new node
             node = Node.create(label = label, reference= reference, alias = alias,  group = group,  x = x,  y = y,  tag = tag, cdata = contents, graph = mygraph)
