@@ -270,22 +270,33 @@ class GraphService(object):
 
             result.append(f"<nodes>")
 
+            sortedNodes= []
             for node in Node.select().where(Node.graph == id):
                 alias = ""
                 if node.alias:
                     alias = node.alias.reference
 
                 if node.cdata:
-                    result.append(f"""<node id="{node.reference}" label="{node.label}" alias="{alias}" group="{node.group}" x="{node.x}" y="{node.y}" tag="{node.tag}">
-    <![CDATA[{node.cdata}]]>
-    </node>""")
+                    sortedNodes.append({
+                        "key": node.reference,
+                        "xml": f'<node id="{node.reference}" label="{node.label}" alias="{alias}" group="{node.group}" x="{node.x}" y="{node.y}" tag="{node.tag}">\n<![CDATA[{node.cdata}]]>\n</node>'
+                    })
                 else:
-                    result.append(f"""<node id="{node.reference}" label="{node.label}" alias="{alias}" group="{node.group}" x="{node.x}" y="{node.y}" tag="{node.tag}" />""")
+                    sortedNodes.append({
+                        "key": node.reference,
+                        "xml": f'<node id="{node.reference}" label="{node.label}" alias="{alias}" group="{node.group}" x="{node.x}" y="{node.y}" tag="{node.tag}" />'
+                    })
+
+            sortedNodes.sort(key = lambda e : e['key'])
+            for node in sortedNodes:
+                result.append(node["xml"])
 
             result.append(f"</nodes>")
 
             index = {}
             result.append(f"<edges>")
+
+            sortedEdges= []
             for edge in Edge.select().where(Edge.graph == id):
                 tag = ""
                 if edge.tag:
@@ -293,11 +304,19 @@ class GraphService(object):
 
                 reference = "{}:{}@{}".format(edge.source.reference,edge.target.reference, self._computeIndex(index, "{}:{}".format(edge.source.reference,edge.target.reference)))
                 if edge.cdata:
-                    result.append(f"""<edge id="{reference}" source="{edge.source.reference}" target="{edge.target.reference}" label="{edge.label}" tag="{tag}">
-    <![CDATA[{edge.cdata}]]>
-    </edge>""")
+                    sortedEdges.append({
+                        "key": reference,
+                        "xml": f'<edge id="{reference}" source="{edge.source.reference}" target="{edge.target.reference}" label="{edge.label}" tag="{tag}"><![CDATA[{edge.cdata}]]>\n</edge>'
+                    })
                 else:
-                    result.append(f"""<edge id="{reference}" source="{edge.source.reference}" target="{edge.target.reference}" label="{edge.label}" tag="{tag}" />""")
+                    sortedEdges.append({
+                        "key": reference,
+                        "xml": f'<edge id="{reference}" source="{edge.source.reference}" target="{edge.target.reference}" label="{edge.label}" tag="{tag}" />'
+                    })
+
+            sortedEdges.sort(key = lambda e : e['key'])
+            for edge in sortedEdges:
+                result.append(edge["xml"])
 
             result.append(f"</edges>")
         result.append(f"</graph>")
